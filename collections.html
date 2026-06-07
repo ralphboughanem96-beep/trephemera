@@ -896,14 +896,6 @@ mobileNav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
     document.body.style.overflow=''; 
 }));
 
-
-// Update the listener for the dropdown
-document.getElementById('sort-select').addEventListener('change', (e) => {
-    const sorted = sortItems(ALL, e.target.value);
-    renderGrid(sorted); // Refresh grid with sorted items
-    applyFilter(currentFilter); // Re-apply the active brand filter
-});
-
 /* INIT */
 fetchItems()
     .then(items => {
