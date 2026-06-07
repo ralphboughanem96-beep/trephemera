@@ -215,7 +215,7 @@
         .zoom-loupe.visible { display:block; }
         .zoom-loupe img { position:absolute; max-width:none; object-fit:contain; }
         @media (max-width:1024px) {
-            .zoom-loupe { width:min(72vw, 280px); height:min(54vw, 210px); }
+            .zoom-loupe { width:min(38vmin, 168px); height:min(28.5vmin, 126px); }
         }
 
         footer { background:var(--navy); border-top:1px solid rgba(196,154,108,0.1); padding:36px var(--pad); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
@@ -356,15 +356,31 @@ const BRANDS = [
     { key:'jaeger-lecoultre', label:'Jaeger-LeCoultre', terms:['jaeger-lecoultre','jaeger lecoultre','jaeger'] },
     { key:'breguet', label:'Breguet', terms:['breguet'] },
     { key:'omega', label:'Omega', terms:['omega'] },
-    { key:'cartier', label:'Cartier', terms:['cartier'] }
+    { key:'cartier', label:'Cartier', terms:['cartier'] },
+    { key:'christophe-claret', label:'Christophe Claret', terms:['christophe claret','christophe'] },
+    { key:'de-bethune', label:'De Bethune', terms:['de bethune'] },
+    { key:'greubel-forsey', label:'Greubel Forsey', terms:['greubel forsey','greubel'] },
+    { key:'tag-heuer', label:'Tag Heuer', terms:['tag heuer','tag-heuer'] }
 ];
+const BRAND_ALIASES = {
+    'christophe': { key:'christophe-claret', label:'Christophe Claret' },
+    'de':         { key:'de-bethune',       label:'De Bethune' },
+    'greubel':    { key:'greubel-forsey',   label:'Greubel Forsey' },
+    'tag':        { key:'tag-heuer',        label:'Tag Heuer' }
+};
 const STOPWORDS = new Set(['the','a','an','rare','vintage','original','genuine','authentic','official','new','old','antique','set','lot','watch','watches']);
 function slugify(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'other'; }
 function detectBrand(title) {
     const t = (title || '').toLowerCase();
     for (const b of BRANDS) if (b.terms.some(s => t.includes(s))) return { key:b.key, label:b.label };
     const words = (title || '').replace(/[^A-Za-z0-9&.\- ]/g,' ').split(/\s+/).filter(Boolean);
+    for (let i = 0; i < words.length - 1; i++) {
+        const pair = (words[i] + ' ' + words[i + 1]).toLowerCase();
+        for (const b of BRANDS) if (b.terms.some(s => pair.includes(s) || s.includes(pair))) return { key:b.key, label:b.label };
+    }
     const first = words.find(w => !STOPWORDS.has(w.toLowerCase())) || words[0] || 'Other';
+    const alias = BRAND_ALIASES[first.toLowerCase()];
+    if (alias) return alias;
     const label = first.charAt(0).toUpperCase() + first.slice(1);
     return { key: slugify(label), label };
 }
@@ -582,7 +598,8 @@ function isTouchDevice() { return touchMq.matches; }
 
 function getLoupeSize() {
     if (isTouchDevice()) {
-        return { w: Math.min(window.innerWidth * 0.72, 280), h: Math.min(window.innerWidth * 0.54, 210) };
+        const w = Math.min(Math.min(window.innerWidth, window.innerHeight) * 0.38, 168);
+        return { w, h: w * 0.75 };
     }
     return { w: 280, h: 210 };
 }
