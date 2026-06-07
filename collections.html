@@ -392,7 +392,7 @@ function translateCondition(c) {
 
 /* EBAY API — calls the Netlify serverless function */
 async function fetchItems() {
-    const res = await fetch('/.netlify/functions/ebay-listings');
+    const res = await fetch('/api/ebay-listings');
     if (!res.ok) throw new Error('API error ' + res.status);
     const items = await res.json();
     return items.map(item => {
@@ -412,7 +412,7 @@ async function fetchItems() {
 }
 
 async function fetchFullItem(itemId) {
-    const res = await fetch(`/.netlify/functions/ebay-listings?itemId=${encodeURIComponent(itemId)}`);
+    const res = await fetch(`/api/ebay-listings?itemId=${encodeURIComponent(itemId)}`);
     if (!res.ok) return null;
     return await res.json(); // { desc, images }
 }
