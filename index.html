@@ -361,7 +361,7 @@ function loadFeatured() {
         .then(r => r.json())
         .then(items => {
             if (!items || !items.length) throw new Error('empty');
-            renderFeatured(items.slice(0,6).map(item => {
+            renderFeatured(items.filter(i => !i.sold && i.sellingState !== 'ENDED').slice(0, 6).map(item => {
                 const brand = item.title.split(' ')[0];
                 return {
                     brand: brand,
