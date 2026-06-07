@@ -401,15 +401,64 @@ const DATA = [
 ];
 
 const CONDITION_EN = {
-    'neuf': 'New', 'neuf avec étiquettes': 'New with tags', 'neuf sans étiquette': 'New without tags',
-    'neuf sans étiquettes': 'New without tags', 'neuf sans emballage': 'New without box', 'comme neuf': 'Like New',
-    'neuf (autre)': 'New (other)', 'neuf : autre (voir les détails)': 'New (other)', 'neuf autre (voir les détails)': 'New (other)',
-    'occasion': 'Used', "d'occasion": 'Used', 'très bon état': 'Very good', 'bon état': 'Good',
-    'état correct': 'Acceptable', 'satisfaisant': 'Acceptable', 'reconditionné': 'Refurbished',
-    'reconditionné par le fabricant': 'Manufacturer refurbished', 'reconditionné par le vendeur': 'Seller refurbished',
-    'reconditionné de façon professionnelle': 'Refurbished', 'pour pièces ou ne fonctionnant pas': 'For parts',
-    'pièces détachées': 'For parts'
+    // --- French Translations ---
+    'neuf': 'New', 
+    'neuf avec étiquettes': 'New with tags', 
+    'neuf sans étiquette': 'New without tags',
+    'neuf sans étiquettes': 'New without tags', 
+    'neuf sans emballage': 'New without box', 
+    'comme neuf': 'Like New',
+    'neuf (autre)': 'New (other)', 
+    'neuf : autre (voir les détails)': 'New (other)', 
+    'neuf autre (voir les détails)': 'New (other)',
+    'occasion': 'Used', 
+    "d'occasion": 'Used', 
+    'très bon état': 'Very good', 
+    'bon état': 'Good',
+    'état correct': 'Acceptable', 
+    'satisfaisant': 'Acceptable', 
+    'reconditionné': 'Refurbished',
+    'reconditionné par le fabricant': 'Manufacturer refurbished', 
+    'reconditionné par le vendeur': 'Seller refurbished',
+    'reconditionné de façon professionnelle': 'Refurbished', 
+    'pour pièces ou ne fonctionnant pas': 'For parts',
+    'pièces détachées': 'For parts',
+
+    // --- Dutch Translations ---
+    'nieuw': 'New',
+    'nieuw met labels': 'New with tags',
+    'nieuw met prijskaartje': 'New with tags',
+    'nieuw met tags': 'New with tags',
+    'nieuw zonder labels': 'New without tags',
+    'nieuw zonder prijskaartje': 'New without tags',
+    'nieuw zonder tags': 'New without tags',
+    'nieuw zonder doos': 'New without box',
+    'nieuw zonder verpakking': 'New without box',
+    'als nieuw': 'Like New',
+    'zo goed als nieuw': 'Like New',
+    'nieuw (overig)': 'New (other)',
+    'nieuw: overig (zie details)': 'New (other)',
+    'nieuw overig (zie details)': 'New (other)',
+    'tweedehands': 'Used',
+    'gebruikt': 'Used',
+    'zeer goed': 'Very good',
+    'in zeer goede staat': 'Very good',
+    'goed': 'Good',
+    'in goede staat': 'Good',
+    'acceptabel': 'Acceptable',
+    'redelijk': 'Acceptable',
+    'in redelijke staat': 'Acceptable',
+    'gereviseerd': 'Refurbished',
+    'refurbished': 'Refurbished',
+    'door de fabrikant gereviseerd': 'Manufacturer refurbished',
+    'gereviseerd door fabrikant': 'Manufacturer refurbished',
+    'door de verkoper gereviseerd': 'Seller refurbished',
+    'gereviseerd door verkoper': 'Seller refurbished',
+    'voor onderdelen of niet werkend': 'For parts',
+    'voor onderdelen': 'For parts',
+    'defect': 'For parts'
 };
+    
 function translateCondition(c) {
     if (!c) return 'See Listing';
     return CONDITION_EN[c.trim().toLowerCase()] || c;
@@ -452,19 +501,23 @@ function renderGrid(items) {
     ALL = items;
     const grid = document.getElementById('collection-grid');
     grid.innerHTML = items.map((it,i) => {
-        // UPDATE 5: Sold watermark
-        const watermark = it.sold ? `<div class="sold-badge">Sold</div>` : '';
+        // We removed the old "sold-badge" red watermark here.
         const priceDisplay = it.sold ? '' : `<div class="card-price">${it.price}</div>`;
+
+        // 1. Add a grayscale filter if the item is sold
+        const imgFilter = it.sold ? 'filter: grayscale(100%);' : '';
+        
+        // 2. Append " | Sold" to the brand text if the item is sold
+        const brandText = it.sold ? `${it.bl} | Sold` : it.bl;
 
         return `
         <article class="item-card" data-brand="${it.bk}" data-idx="${i}" style="animation:fadeUp .4s ease ${Math.min(i*.03,.45).toFixed(2)}s both" role="button" tabindex="0" aria-label="View details for ${it.title}">
             <div class="card-img-wrap">
-                ${watermark}
-                ${it.images.length ? `<img src="${ebayImg(it.images[0], 500)}" srcset="${ebayImg(it.images[0],300)} 300w, ${ebayImg(it.images[0],500)} 500w, ${ebayImg(it.images[0],800)} 800w" sizes="(max-width:720px) 50vw, (max-width:1100px) 33vw, 25vw" class="card-img" alt="${it.title}" loading="lazy" decoding="async">` : `<div class="card-placeholder">${watchSVG(60)}</div>`}
+                ${it.images.length ? `<img src="${ebayImg(it.images[0], 500)}" srcset="${ebayImg(it.images[0],300)} 300w, ${ebayImg(it.images[0],500)} 500w, ${ebayImg(it.images[0],800)} 800w" sizes="(max-width:720px) 50vw, (max-width:1100px) 33vw, 25vw" class="card-img" alt="${it.title}" loading="lazy" decoding="async" style="${imgFilter}">` : `<div class="card-placeholder">${watchSVG(60)}</div>`}
                 <div class="card-cta">View Details</div>
             </div>
             <div class="card-body">
-                <div class="card-brand">${it.bl}</div>
+                <div class="card-brand">${brandText}</div>
                 <div class="card-title">${it.title}</div>
                 <div class="card-foot">${priceDisplay}<div class="card-type">${it.type}</div></div>
             </div>
