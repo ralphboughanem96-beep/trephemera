@@ -8,6 +8,8 @@
     <link rel="canonical" href="https://trephemera.com/collections.html">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://i.ebayimg.com" crossorigin>
+    <link rel="dns-prefetch" href="https://i.ebayimg.com">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -343,6 +345,33 @@ const DATA = [
   { bk:'breguet', bl:'Breguet', title:'Breguet Marine Collection Rare Heritage Ephemera Set', price:'€88.00', type:'Rare Ephemera', images:[], desc:'A rare ephemera set covering the heritage and current range of the Breguet Marine collection, tracing the line\'s origins to Abraham-Louis Breguet\'s marine chronometers supplied to the French Navy. Includes a heritage essay, current collection specifications, and period engravings reproduced on archival paper. Near mint condition. A beautifully produced set that captures both the historical depth and contemporary relevance of one of watchmaking\'s oldest dynasties.' },
 ];
 
+/* CONDITION — eBay returns the condition in French (ebay.be). Translate to English. */
+const CONDITION_EN = {
+    'neuf': 'New',
+    'neuf avec étiquettes': 'New with tags',
+    'neuf sans étiquette': 'New without tags',
+    'neuf sans étiquettes': 'New without tags',
+    'neuf (autre)': 'New (other)',
+    'neuf : autre (voir les détails)': 'New (other)',
+    'neuf autre (voir les détails)': 'New (other)',
+    'occasion': 'Used',
+    "d'occasion": 'Used',
+    'très bon état': 'Very good',
+    'bon état': 'Good',
+    'état correct': 'Acceptable',
+    'satisfaisant': 'Acceptable',
+    'reconditionné': 'Refurbished',
+    'reconditionné par le fabricant': 'Manufacturer refurbished',
+    'reconditionné par le vendeur': 'Seller refurbished',
+    'reconditionné de façon professionnelle': 'Refurbished',
+    'pour pièces ou ne fonctionnant pas': 'For parts or not working',
+    'pièces détachées': 'For parts or not working'
+};
+function translateCondition(c) {
+    if (!c) return 'See Listing';
+    return CONDITION_EN[c.trim().toLowerCase()] || c;
+}
+
 /* EBAY API — calls the Netlify serverless function */
 async function fetchItems() {
     const res = await fetch('/.netlify/functions/ebay-listings');
@@ -355,7 +384,7 @@ async function fetchItems() {
             bl:     brand.label,
             title:  item.title,
             price:  `${item.price?.currency || '€'} ${parseFloat(item.price?.value || 0).toFixed(2)}`,
-            type:   item.condition || 'See Listing',
+            type:   translateCondition(item.condition),
             images: [item.image?.imageUrl, ...(item.additionalImages || []).map(x => x.imageUrl)].filter(Boolean),
             desc:   item.shortDescription || '',
             url:    item.itemWebUrl,
@@ -378,8 +407,8 @@ function renderGrid(items) {
     ALL = items;
     const grid = document.getElementById('collection-grid');
     grid.innerHTML = items.map((it,i) => `
-        <article class="item-card" data-brand="${it.bk}" data-idx="${i}" style="animation:fadeUp .4s ease ${(i*.03).toFixed(2)}s both" role="button" tabindex="0" aria-label="View details">
-            <div class="card-img-wrap">${it.images.length ? `<img src="${ebayImg(it.images[0], 800)}" class="card-img" alt="${it.title}" loading="lazy">` : `<div class="card-placeholder">${watchSVG(60)}</div>`}<div class="card-cta">View Details</div></div>
+        <article class="item-card" data-brand="${it.bk}" data-idx="${i}" style="animation:fadeUp .4s ease ${Math.min(i*.03,.45).toFixed(2)}s both" role="button" tabindex="0" aria-label="View details">
+            <div class="card-img-wrap">${it.images.length ? `<img src="${ebayImg(it.images[0], 500)}" srcset="${ebayImg(it.images[0],300)} 300w, ${ebayImg(it.images[0],500)} 500w, ${ebayImg(it.images[0],800)} 800w" sizes="(max-width:720px) 50vw, (max-width:1100px) 33vw, 25vw" class="card-img" alt="${it.title}" loading="lazy" decoding="async">` : `<div class="card-placeholder">${watchSVG(60)}</div>`}<div class="card-cta">View Details</div></div>
             <div class="card-body">
                 <div class="card-brand">${it.bl}</div>
                 <div class="card-title">${it.title}</div>
@@ -438,7 +467,7 @@ let gIdx=0, gImgs=[];
 function buildGallery(images) {
     gIdx=0; gImgs=images.length?images:[null];
     const track=document.getElementById('gallery-track'), dots=document.getElementById('gallery-dots'), prev=document.getElementById('g-prev'), next=document.getElementById('g-next');
-    track.innerHTML = gImgs.map(src => src ? `<div class="gallery-slide"><img src="${ebayImg(src, 1600)}" alt="" loading="lazy"></div>` : `<div class="gallery-slide"><div class="gallery-ph">${watchSVG(90)}</div></div>`).join('');
+    track.innerHTML = gImgs.map((src,i) => src ? `<div class="gallery-slide"><img src="${ebayImg(src, 1600)}" alt="" ${i===0?'fetchpriority="high"':'loading="lazy"'} decoding="async"></div>` : `<div class="gallery-slide"><div class="gallery-ph">${watchSVG(90)}</div></div>`).join('');
     track.style.transform='translateX(0)';
     if (gImgs.length>1) {
         dots.innerHTML = gImgs.map((_,i)=>`<button class="gallery-dot ${i===0?'on':''}" data-i="${i}" aria-label="Image ${i+1}"></button>`).join('');
@@ -477,7 +506,7 @@ function openModal(idx) {
         <div class="modal-rule"></div>
         <div class="modal-meta">
             <div class="meta-item"><span class="meta-label">Price</span><span class="meta-val price">${it.price}</span></div>
-            <div class="meta-item"><span class="meta-label">Type</span><span class="meta-val">${it.type || 'See Listing'}</span></div>
+            <div class="meta-item"><span class="meta-label">Condition</span><span class="meta-val">${it.type || 'See Listing'}</span></div>
         </div>
         <div class="desc-label">Description</div>
         <div class="desc-body" id="desc-body">${it.desc || loadingDesc}</div>
