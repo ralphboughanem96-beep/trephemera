@@ -75,6 +75,16 @@
         .f-count { font-size:0.9rem; padding:2px 8px; border-radius:20px; background:rgba(0,0,0,0.08); color:var(--navy); }
         .filter-tab.active .f-count { background:rgba(255,255,255,0.2); color:var(--cream); }
 
+        .filter-select-wrap { display:none; }
+        .filter-select {
+            width:100%; padding:12px 16px; border:1px solid rgba(0,0,0,0.15); border-radius:6px;
+            background:#fff; color:var(--navy); font-family:inherit; font-size:1.05rem; font-weight:600;
+            letter-spacing:1px; text-transform:uppercase; cursor:pointer; appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%230a1520' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 16px center; padding-right:40px;
+        }
+        .filter-select:focus { outline:3px solid var(--rose-gold); outline-offset:2px; }
+
         /* RESULTS & WRAP: Cream background updates */
         .results-bar { background:var(--cream); padding:20px var(--pad) 0; text-align:center; }
         .results-bar-inner { max-width:1400px; margin:0 auto; }
@@ -128,6 +138,14 @@
         .gallery-slide { flex:0 0 100%; height:100%; display:flex; align-items:center; justify-content:center; position:relative; }
         .gallery-slide img { width:100%; height:100%; object-fit:contain; transition:transform 0.2s ease-out; transform-origin:center; }
         .gallery-slide img.active-zoom { transform:scale(2.5); }
+
+        .zoom-loupe {
+            display:none; position:absolute; width:140px; height:140px; border-radius:50%;
+            border:3px solid var(--rose-gold); overflow:hidden; pointer-events:none; z-index:15;
+            box-shadow:0 4px 24px rgba(0,0,0,0.55); background:var(--navy);
+        }
+        .zoom-loupe.visible { display:block; }
+        .zoom-loupe img { position:absolute; max-width:none; width:auto; height:auto; object-fit:contain; }
         
         .gallery-ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--navy),var(--navy-light)); }
         .gallery-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:5; width:40px; height:40px; background:rgba(10,21,32,0.7); border:1px solid rgba(196,154,108,0.3); border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.2s; }
@@ -176,6 +194,12 @@
             .gallery-panel { height:40vh; }
             .gallery-viewport { min-height:200px; }
         }
+        @media (max-width:1024px) {
+            .filter-bar { display:none; }
+            .filter-select-wrap { display:block; }
+            .filter-section { padding:10px 0; }
+            .gallery-viewport.loupe-active { cursor:crosshair; }
+        }
         @media (max-width:640px) {
             .nav-links { display:none; }
             .nav-toggle { display:flex; }
@@ -217,6 +241,9 @@
     <div class="filter-section">
         <div class="filter-wrapper">
             <div class="filter-bar" id="filter-bar" role="tablist" aria-label="Brand filters"></div>
+            <div class="filter-select-wrap">
+                <select class="filter-select" id="filter-select" aria-label="Filter by brand"></select>
+            </div>
         </div>
     </div>
 
@@ -229,7 +256,7 @@
     <div class="modal" id="modal">
         <button class="modal-close" id="modal-close" aria-label="Close modal"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         <div class="gallery-panel">
-            <div class="gallery-viewport" id="gallery-viewport" aria-label="Image gallery. Click to zoom.">
+            <div class="gallery-viewport" id="gallery-viewport" aria-label="Image gallery. Tap or click to magnify.">
                 <div class="gallery-track" id="gallery-track"></div>
                 <button class="gallery-arrow prev hide" id="g-prev" aria-label="Previous image"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
                 <button class="gallery-arrow next hide" id="g-next" aria-label="Next image"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
@@ -312,7 +339,14 @@ const DATA = [
 ];
 
 const CONDITION_EN = {
-    'neuf': 'New', 'occasion': 'Used', "d'occasion": 'Used', 'très bon état': 'Very good', 'bon état': 'Good'
+    'neuf': 'New', 'neuf avec étiquettes': 'New with tags', 'neuf sans étiquette': 'New without tags',
+    'neuf sans étiquettes': 'New without tags', 'neuf sans emballage': 'New without box', 'comme neuf': 'Like New',
+    'neuf (autre)': 'New (other)', 'neuf : autre (voir les détails)': 'New (other)', 'neuf autre (voir les détails)': 'New (other)',
+    'occasion': 'Used', "d'occasion": 'Used', 'très bon état': 'Very good', 'bon état': 'Good',
+    'état correct': 'Acceptable', 'satisfaisant': 'Acceptable', 'reconditionné': 'Refurbished',
+    'reconditionné par le fabricant': 'Manufacturer refurbished', 'reconditionné par le vendeur': 'Seller refurbished',
+    'reconditionné de façon professionnelle': 'Refurbished', 'pour pièces ou ne fonctionnant pas': 'For parts',
+    'pièces détachées': 'For parts'
 };
 function translateCondition(c) {
     if (!c) return 'See Listing';
@@ -378,27 +412,45 @@ function renderGrid(items) {
     });
 }
 
+let currentFilter = 'all';
+
+function setFilter(f) {
+    currentFilter = f;
+    const bar = document.getElementById('filter-bar');
+    const select = document.getElementById('filter-select');
+    bar.querySelectorAll('.filter-tab').forEach(t => {
+        const active = t.dataset.f === f;
+        t.classList.toggle('active', active);
+        t.setAttribute('aria-selected', active);
+    });
+    if (select) select.value = f;
+    applyFilter(f);
+}
+
 function buildTabs(items) {
     const bar = document.getElementById('filter-bar');
+    const select = document.getElementById('filter-select');
     const map = new Map();
     items.forEach(it => { if (!map.has(it.bk)) map.set(it.bk,{label:it.bl,n:0}); map.get(it.bk).n++; });
     
-    // UPDATE 3: Sort alphabetically
     const sorted = [...map.entries()].sort((a,b) => {
         if (a[0]==='other') return 1;
         if (b[0]==='other') return -1;
         return a[1].label.localeCompare(b[1].label);
     });
     
-    bar.innerHTML = `<button class="filter-tab active" data-f="all" role="tab" aria-selected="true">All <span class="f-count">${items.length}</span></button>` + 
-        sorted.map(([k,v])=>`<button class="filter-tab" data-f="${k}" role="tab" aria-selected="false">${v.label} <span class="f-count">${v.n}</span></button>`).join('');
+    const options = [{ key:'all', label:'All', count:items.length }, ...sorted.map(([k,v])=>({ key:k, label:v.label, count:v.n }))];
     
-    bar.querySelectorAll('.filter-tab').forEach(tab => tab.addEventListener('click', () => {
-        bar.querySelectorAll('.filter-tab').forEach(t=>{ t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
-        tab.classList.add('active');
-        tab.setAttribute('aria-selected', 'true');
-        applyFilter(tab.dataset.f);
-    }));
+    bar.innerHTML = options.map(o =>
+        `<button class="filter-tab${o.key==='all'?' active':''}" data-f="${o.key}" role="tab" aria-selected="${o.key==='all'}">${o.label} <span class="f-count">${o.count}</span></button>`
+    ).join('');
+    
+    select.innerHTML = options.map(o =>
+        `<option value="${o.key}">${o.label} (${o.count})</option>`
+    ).join('');
+    
+    bar.querySelectorAll('.filter-tab').forEach(tab => tab.addEventListener('click', () => setFilter(tab.dataset.f)));
+    select.addEventListener('change', () => setFilter(select.value));
 }
 
 function applyFilter(f) {
@@ -412,30 +464,80 @@ function applyFilter(f) {
     }, 180);
 }
 
-/* GALLERY & ZOOM UPDATE 11 */
+/* GALLERY & ZOOM */
 let gIdx=0, gImgs=[];
 let isZoomed = false;
 const vp = document.getElementById('gallery-viewport');
+const LOUPE_SIZE = 140;
+const LOUPE_ZOOM = 2.5;
+const loupeMq = window.matchMedia('(max-width: 1024px)');
+
+const loupe = document.createElement('div');
+loupe.className = 'zoom-loupe';
+loupe.innerHTML = '<img alt="">';
+vp.appendChild(loupe);
+const loupeImg = loupe.querySelector('img');
+
+function isLoupeMode() { return loupeMq.matches; }
+
+function getActiveImg() {
+    const slide = vp.querySelectorAll('.gallery-slide')[gIdx];
+    return slide ? slide.querySelector('img') : null;
+}
 
 function resetZoom() {
     isZoomed = false;
-    vp.classList.remove('zoomed');
+    vp.classList.remove('zoomed', 'loupe-active');
+    loupe.classList.remove('visible');
     document.querySelectorAll('.gallery-slide img').forEach(img => {
         img.classList.remove('active-zoom');
         img.style.transformOrigin = 'center';
     });
 }
 
-vp.addEventListener('click', e => {
-    if (e.target.tagName === 'IMG') {
-        isZoomed = !isZoomed;
-        vp.classList.toggle('zoomed', isZoomed);
-        e.target.classList.toggle('active-zoom', isZoomed);
-        if(!isZoomed) e.target.style.transformOrigin = 'center';
+function updateLoupe(clientX, clientY) {
+    const img = getActiveImg();
+    if (!img) return;
+    const imgRect = img.getBoundingClientRect();
+    const vpRect = vp.getBoundingClientRect();
+
+    if (clientX < imgRect.left || clientX > imgRect.right || clientY < imgRect.top || clientY > imgRect.bottom) {
+        loupe.classList.remove('visible');
+        return;
     }
+
+    const relX = (clientX - imgRect.left) / imgRect.width;
+    const relY = (clientY - imgRect.top) / imgRect.height;
+
+    let left = clientX - vpRect.left - LOUPE_SIZE / 2;
+    let top = clientY - vpRect.top - LOUPE_SIZE / 2;
+    left = Math.max(4, Math.min(left, vpRect.width - LOUPE_SIZE - 4));
+    top = Math.max(4, Math.min(top, vpRect.height - LOUPE_SIZE - 4));
+
+    loupe.style.left = left + 'px';
+    loupe.style.top = top + 'px';
+    loupeImg.src = img.currentSrc || img.src;
+    loupeImg.style.width = imgRect.width * LOUPE_ZOOM + 'px';
+    loupeImg.style.height = imgRect.height * LOUPE_ZOOM + 'px';
+    loupeImg.style.left = -(relX * imgRect.width * LOUPE_ZOOM - LOUPE_SIZE / 2) + 'px';
+    loupeImg.style.top = -(relY * imgRect.height * LOUPE_ZOOM - LOUPE_SIZE / 2) + 'px';
+    loupe.classList.add('visible');
+    vp.classList.add('loupe-active');
+}
+
+vp.addEventListener('click', e => {
+    if (isLoupeMode() || e.target.tagName !== 'IMG') return;
+    isZoomed = !isZoomed;
+    vp.classList.toggle('zoomed', isZoomed);
+    e.target.classList.toggle('active-zoom', isZoomed);
+    if (!isZoomed) e.target.style.transformOrigin = 'center';
 });
 
 vp.addEventListener('mousemove', e => {
+    if (isLoupeMode()) {
+        if (e.buttons === 1 && loupe.classList.contains('visible')) updateLoupe(e.clientX, e.clientY);
+        return;
+    }
     if (!isZoomed) return;
     const img = document.querySelector('.gallery-slide img.active-zoom');
     if (!img) return;
@@ -445,7 +547,21 @@ vp.addEventListener('mousemove', e => {
     img.style.transformOrigin = `${x}% ${y}%`;
 });
 
-vp.addEventListener('mouseleave', resetZoom);
+vp.addEventListener('mousedown', e => {
+    if (!isLoupeMode() || e.target.tagName !== 'IMG') return;
+    updateLoupe(e.clientX, e.clientY);
+});
+
+vp.addEventListener('mouseup', () => {
+    if (isLoupeMode()) loupe.classList.remove('visible');
+});
+
+vp.addEventListener('mouseleave', () => {
+    if (isLoupeMode()) loupe.classList.remove('visible');
+    else resetZoom();
+});
+
+loupeMq.addEventListener('change', resetZoom);
 
 function buildGallery(images) {
     resetZoom();
@@ -469,15 +585,42 @@ function goTo(i) {
 document.getElementById('g-prev').addEventListener('click',()=>goTo(gIdx-1));
 document.getElementById('g-next').addEventListener('click',()=>goTo(gIdx+1));
 
-/* Swipe */
+/* Swipe & loupe touch */
 (function(){
-    let sx=0, sy=0, swiping=false;
-    vp.addEventListener('touchstart',e=>{ if(isZoomed)return; sx=e.touches[0].clientX; sy=e.touches[0].clientY; swiping=true; },{passive:true});
-    vp.addEventListener('touchend',e=>{
-        if(!swiping)return; swiping=false;
-        const dx=sx-e.changedTouches[0].clientX, dy=sy-e.changedTouches[0].clientY;
-        if(Math.abs(dx)>40 && Math.abs(dx)>Math.abs(dy)) goTo(gIdx+(dx>0?1:-1));
-    },{passive:true});
+    let sx=0, sy=0, swiping=false, touchLoupe=false;
+    const MOVE_THRESH = 8;
+
+    vp.addEventListener('touchstart', e => {
+        if (isZoomed) return;
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+        swiping = true;
+        touchLoupe = isLoupeMode() && e.target.tagName === 'IMG';
+        if (touchLoupe) updateLoupe(sx, sy);
+    }, { passive: true });
+
+    vp.addEventListener('touchmove', e => {
+        if (!swiping || !touchLoupe) return;
+        const cx = e.touches[0].clientX, cy = e.touches[0].clientY;
+        const dx = Math.abs(cx - sx), dy = Math.abs(cy - sy);
+        if (dx > MOVE_THRESH && dx > dy * 1.5) {
+            touchLoupe = false;
+            loupe.classList.remove('visible');
+            return;
+        }
+        if (dx > 2 || dy > 2) updateLoupe(cx, cy);
+    }, { passive: true });
+
+    vp.addEventListener('touchend', e => {
+        if (!swiping) return;
+        swiping = false;
+        if (touchLoupe) {
+            touchLoupe = false;
+            loupe.classList.remove('visible');
+            return;
+        }
+        const dx = sx - e.changedTouches[0].clientX, dy = sy - e.changedTouches[0].clientY;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) goTo(gIdx + (dx > 0 ? 1 : -1));
+    }, { passive: true });
 })();
 
 const backdrop=document.getElementById('backdrop');
