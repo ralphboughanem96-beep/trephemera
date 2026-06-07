@@ -129,23 +129,10 @@
         .modal-close svg { width:16px; height:16px; stroke:var(--cream); fill:none; stroke-width:2; stroke-linecap:round; }
 
         .gallery-panel { background:var(--navy); position:relative; display:flex; flex-direction:column; min-height:0; }
-        .gallery-viewport { position:relative; flex:1; overflow:hidden; min-height:300px; touch-action:pan-y; cursor:zoom-in; }
-        
-        /* UPDATE 11: Zoom features */
-        .gallery-viewport.zoomed { cursor:grab; overflow:hidden; touch-action:none; }
-        .gallery-viewport.zoomed:active { cursor:grabbing; }
+        .gallery-viewport { position:relative; flex:1; overflow:hidden; min-height:300px; touch-action:pan-y; cursor:pointer; }
         .gallery-track { display:flex; height:100%; transition:transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
         .gallery-slide { flex:0 0 100%; height:100%; display:flex; align-items:center; justify-content:center; position:relative; }
-        .gallery-slide img { width:100%; height:100%; object-fit:contain; transition:transform 0.2s ease-out; transform-origin:center; }
-        .gallery-slide img.active-zoom { transform:scale(2.5); }
-
-        .zoom-loupe {
-            display:none; position:absolute; width:140px; height:140px; border-radius:50%;
-            border:3px solid var(--rose-gold); overflow:hidden; pointer-events:none; z-index:15;
-            box-shadow:0 4px 24px rgba(0,0,0,0.55); background:var(--navy);
-        }
-        .zoom-loupe.visible { display:block; }
-        .zoom-loupe img { position:absolute; max-width:none; width:auto; height:auto; object-fit:contain; }
+        .gallery-slide img { width:100%; height:100%; object-fit:contain; pointer-events:none; }
         
         .gallery-ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--navy),var(--navy-light)); }
         .gallery-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:5; width:40px; height:40px; background:rgba(10,21,32,0.7); border:1px solid rgba(196,154,108,0.3); border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.2s; }
@@ -182,6 +169,52 @@
         .buy-btn:hover { background:var(--rose-gold-lt); letter-spacing:5px; }
         .buy-btn svg { width:16px; height:16px; stroke:var(--navy); fill:none; stroke-width:2; stroke-linecap:round; }
 
+        /* FULL-PAGE LIGHTBOX */
+        .lightbox {
+            position:fixed; inset:0; z-index:400; background:rgba(0,0,0,0.96);
+            display:flex; flex-direction:column; opacity:0; visibility:hidden;
+            transition:opacity 0.25s, visibility 0.25s;
+        }
+        .lightbox.open { opacity:1; visibility:visible; }
+        .lightbox-close {
+            position:absolute; top:16px; right:16px; z-index:10; width:44px; height:44px;
+            background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:50%;
+            cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.2s;
+        }
+        .lightbox-close:hover { background:rgba(255,255,255,0.2); }
+        .lightbox-close svg { width:18px; height:18px; stroke:#fff; fill:none; stroke-width:2; stroke-linecap:round; }
+        .lightbox-counter {
+            position:absolute; top:20px; left:50%; transform:translateX(-50%); z-index:10;
+            font-size:0.95rem; letter-spacing:2px; color:rgba(255,255,255,0.7); text-transform:uppercase;
+        }
+        .lightbox-viewport {
+            flex:1; position:relative; overflow:hidden; min-height:0;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .lightbox-viewport.desktop-zoom { cursor:zoom-in; }
+        .lightbox-viewport.desktop-zoom.loupe-on { cursor:none; }
+        .lightbox-track {
+            display:flex; height:100%; width:100%; transition:transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
+        }
+        .lightbox-slide {
+            flex:0 0 100%; height:100%; display:flex; align-items:center; justify-content:center;
+            overflow:hidden; touch-action:none;
+        }
+        .lightbox-slide img {
+            max-width:100%; max-height:100%; object-fit:contain; user-select:none;
+            -webkit-user-drag:none; will-change:transform;
+        }
+        .lightbox-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:5; }
+        .lightbox-arrow.prev { left:12px; }
+        .lightbox-arrow.next { right:12px; }
+        .zoom-loupe {
+            display:none; position:fixed; width:160px; height:160px; border-radius:50%;
+            border:3px solid var(--rose-gold); overflow:hidden; pointer-events:none; z-index:410;
+            box-shadow:0 4px 28px rgba(0,0,0,0.6); background:#000;
+        }
+        .zoom-loupe.visible { display:block; }
+        .zoom-loupe img { position:absolute; max-width:none; object-fit:contain; }
+
         footer { background:var(--navy); border-top:1px solid rgba(196,154,108,0.1); padding:36px var(--pad); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
         .footer-logo { font-size:1.3rem; font-weight:600; letter-spacing:4px; color:var(--rose-gold); text-transform:uppercase; }
         .footer-copy { font-size:1rem; letter-spacing:2px; color:var(--muted); text-transform:uppercase; }
@@ -198,7 +231,6 @@
             .filter-bar { display:none; }
             .filter-select-wrap { display:block; }
             .filter-section { padding:10px 0; }
-            .gallery-viewport.loupe-active { cursor:crosshair; }
         }
         @media (max-width:640px) {
             .nav-links { display:none; }
@@ -256,7 +288,7 @@
     <div class="modal" id="modal">
         <button class="modal-close" id="modal-close" aria-label="Close modal"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         <div class="gallery-panel">
-            <div class="gallery-viewport" id="gallery-viewport" aria-label="Image gallery. Tap or click to magnify.">
+            <div class="gallery-viewport" id="gallery-viewport" aria-label="Image gallery. Tap to view full screen.">
                 <div class="gallery-track" id="gallery-track"></div>
                 <button class="gallery-arrow prev hide" id="g-prev" aria-label="Previous image"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
                 <button class="gallery-arrow next hide" id="g-next" aria-label="Next image"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
@@ -275,6 +307,17 @@
             <div class="modal-sticky-footer" id="modal-footer"></div>
         </div>
     </div>
+</div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Full screen image viewer">
+    <button class="lightbox-close" id="lightbox-close" aria-label="Close full screen view"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="lightbox-counter" id="lightbox-counter"></div>
+    <div class="lightbox-viewport" id="lightbox-viewport">
+        <div class="lightbox-track" id="lightbox-track"></div>
+        <button class="gallery-arrow lightbox-arrow prev hide" id="lb-prev" aria-label="Previous image"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <button class="gallery-arrow lightbox-arrow next hide" id="lb-next" aria-label="Next image"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+    <div class="zoom-loupe" id="lightbox-loupe"><img alt=""></div>
 </div>
 
 <footer>
@@ -464,162 +507,253 @@ function applyFilter(f) {
     }, 180);
 }
 
-/* GALLERY & ZOOM */
-let gIdx=0, gImgs=[];
-let isZoomed = false;
+/* GALLERY (modal preview) */
+let gIdx = 0, gImgs = [];
 const vp = document.getElementById('gallery-viewport');
-const LOUPE_SIZE = 140;
-const LOUPE_ZOOM = 2.5;
-const loupeMq = window.matchMedia('(max-width: 1024px)');
-
-const loupe = document.createElement('div');
-loupe.className = 'zoom-loupe';
-loupe.innerHTML = '<img alt="">';
-vp.appendChild(loupe);
-const loupeImg = loupe.querySelector('img');
-
-function isLoupeMode() { return loupeMq.matches; }
-
-function getActiveImg() {
-    const slide = vp.querySelectorAll('.gallery-slide')[gIdx];
-    return slide ? slide.querySelector('img') : null;
-}
-
-function resetZoom() {
-    isZoomed = false;
-    vp.classList.remove('zoomed', 'loupe-active');
-    loupe.classList.remove('visible');
-    document.querySelectorAll('.gallery-slide img').forEach(img => {
-        img.classList.remove('active-zoom');
-        img.style.transformOrigin = 'center';
-    });
-}
-
-function updateLoupe(clientX, clientY) {
-    const img = getActiveImg();
-    if (!img) return;
-    const imgRect = img.getBoundingClientRect();
-    const vpRect = vp.getBoundingClientRect();
-
-    if (clientX < imgRect.left || clientX > imgRect.right || clientY < imgRect.top || clientY > imgRect.bottom) {
-        loupe.classList.remove('visible');
-        return;
-    }
-
-    const relX = (clientX - imgRect.left) / imgRect.width;
-    const relY = (clientY - imgRect.top) / imgRect.height;
-
-    let left = clientX - vpRect.left - LOUPE_SIZE / 2;
-    let top = clientY - vpRect.top - LOUPE_SIZE / 2;
-    left = Math.max(4, Math.min(left, vpRect.width - LOUPE_SIZE - 4));
-    top = Math.max(4, Math.min(top, vpRect.height - LOUPE_SIZE - 4));
-
-    loupe.style.left = left + 'px';
-    loupe.style.top = top + 'px';
-    loupeImg.src = img.currentSrc || img.src;
-    loupeImg.style.width = imgRect.width * LOUPE_ZOOM + 'px';
-    loupeImg.style.height = imgRect.height * LOUPE_ZOOM + 'px';
-    loupeImg.style.left = -(relX * imgRect.width * LOUPE_ZOOM - LOUPE_SIZE / 2) + 'px';
-    loupeImg.style.top = -(relY * imgRect.height * LOUPE_ZOOM - LOUPE_SIZE / 2) + 'px';
-    loupe.classList.add('visible');
-    vp.classList.add('loupe-active');
-}
-
-vp.addEventListener('click', e => {
-    if (isLoupeMode() || e.target.tagName !== 'IMG') return;
-    isZoomed = !isZoomed;
-    vp.classList.toggle('zoomed', isZoomed);
-    e.target.classList.toggle('active-zoom', isZoomed);
-    if (!isZoomed) e.target.style.transformOrigin = 'center';
-});
-
-vp.addEventListener('mousemove', e => {
-    if (isLoupeMode()) {
-        if (e.buttons === 1 && loupe.classList.contains('visible')) updateLoupe(e.clientX, e.clientY);
-        return;
-    }
-    if (!isZoomed) return;
-    const img = document.querySelector('.gallery-slide img.active-zoom');
-    if (!img) return;
-    const rect = vp.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    img.style.transformOrigin = `${x}% ${y}%`;
-});
-
-vp.addEventListener('mousedown', e => {
-    if (!isLoupeMode() || e.target.tagName !== 'IMG') return;
-    updateLoupe(e.clientX, e.clientY);
-});
-
-vp.addEventListener('mouseup', () => {
-    if (isLoupeMode()) loupe.classList.remove('visible');
-});
-
-vp.addEventListener('mouseleave', () => {
-    if (isLoupeMode()) loupe.classList.remove('visible');
-    else resetZoom();
-});
-
-loupeMq.addEventListener('change', resetZoom);
 
 function buildGallery(images) {
-    resetZoom();
-    gIdx=0; gImgs=images.length?images:[null];
-    const track=document.getElementById('gallery-track'), dots=document.getElementById('gallery-dots'), prev=document.getElementById('g-prev'), next=document.getElementById('g-next');
-    track.innerHTML = gImgs.map((src,i) => src ? `<div class="gallery-slide"><img src="${ebayImg(src, 1600)}" alt="Product Image ${i+1}" ${i===0?'fetchpriority="high"':'loading="lazy"'} decoding="async"></div>` : `<div class="gallery-slide"><div class="gallery-ph">${watchSVG(90)}</div></div>`).join('');
-    track.style.transform='translateX(0)';
-    if (gImgs.length>1) {
-        dots.innerHTML = gImgs.map((_,i)=>`<button class="gallery-dot ${i===0?'on':''}" data-i="${i}" aria-label="Image ${i+1}"></button>`).join('');
-        dots.querySelectorAll('.gallery-dot').forEach(d=>d.addEventListener('click',()=>goTo(+d.dataset.i)));
+    gIdx = 0; gImgs = images.length ? images : [null];
+    const track = document.getElementById('gallery-track');
+    const dots = document.getElementById('gallery-dots');
+    const prev = document.getElementById('g-prev');
+    const next = document.getElementById('g-next');
+    track.innerHTML = gImgs.map((src, i) => src
+        ? `<div class="gallery-slide"><img src="${ebayImg(src, 1600)}" alt="Product Image ${i + 1}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async"></div>`
+        : `<div class="gallery-slide"><div class="gallery-ph">${watchSVG(90)}</div></div>`
+    ).join('');
+    track.style.transform = 'translateX(0)';
+    if (gImgs.length > 1) {
+        dots.innerHTML = gImgs.map((_, i) => `<button class="gallery-dot ${i === 0 ? 'on' : ''}" data-i="${i}" aria-label="Image ${i + 1}"></button>`).join('');
+        dots.querySelectorAll('.gallery-dot').forEach(d => d.addEventListener('click', () => goTo(+d.dataset.i)));
         prev.classList.remove('hide'); next.classList.remove('hide');
-    } else { dots.innerHTML=''; prev.classList.add('hide'); next.classList.add('hide'); }
+    } else {
+        dots.innerHTML = ''; prev.classList.add('hide'); next.classList.add('hide');
+    }
 }
 
 function goTo(i) {
-    resetZoom();
-    gIdx=((i%gImgs.length)+gImgs.length)%gImgs.length;
-    document.getElementById('gallery-track').style.transform=`translateX(-${gIdx*100}%)`;
-    document.querySelectorAll('.gallery-dot').forEach((d,j)=>d.classList.toggle('on',j===gIdx));
+    if (!gImgs.length) return;
+    gIdx = ((i % gImgs.length) + gImgs.length) % gImgs.length;
+    document.getElementById('gallery-track').style.transform = `translateX(-${gIdx * 100}%)`;
+    document.querySelectorAll('.gallery-dot').forEach((d, j) => d.classList.toggle('on', j === gIdx));
+    if (lightbox.classList.contains('open')) lbGoTo(gIdx, false);
 }
-document.getElementById('g-prev').addEventListener('click',()=>goTo(gIdx-1));
-document.getElementById('g-next').addEventListener('click',()=>goTo(gIdx+1));
 
-/* Swipe & loupe touch */
+document.getElementById('g-prev').addEventListener('click', () => goTo(gIdx - 1));
+document.getElementById('g-next').addEventListener('click', () => goTo(gIdx + 1));
+
+vp.addEventListener('click', e => {
+    if (e.target.closest('.gallery-arrow') || !gImgs[gIdx]) return;
+    openLightbox(gIdx);
+});
+
 (function(){
-    let sx=0, sy=0, swiping=false, touchLoupe=false;
-    const MOVE_THRESH = 8;
-
+    let sx = 0, sy = 0, swiping = false;
     vp.addEventListener('touchstart', e => {
-        if (isZoomed) return;
-        sx = e.touches[0].clientX; sy = e.touches[0].clientY;
-        swiping = true;
-        touchLoupe = isLoupeMode() && e.target.tagName === 'IMG';
-        if (touchLoupe) updateLoupe(sx, sy);
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY; swiping = true;
     }, { passive: true });
-
-    vp.addEventListener('touchmove', e => {
-        if (!swiping || !touchLoupe) return;
-        const cx = e.touches[0].clientX, cy = e.touches[0].clientY;
-        const dx = Math.abs(cx - sx), dy = Math.abs(cy - sy);
-        if (dx > MOVE_THRESH && dx > dy * 1.5) {
-            touchLoupe = false;
-            loupe.classList.remove('visible');
-            return;
-        }
-        if (dx > 2 || dy > 2) updateLoupe(cx, cy);
-    }, { passive: true });
-
     vp.addEventListener('touchend', e => {
         if (!swiping) return;
         swiping = false;
-        if (touchLoupe) {
-            touchLoupe = false;
-            loupe.classList.remove('visible');
+        const dx = sx - e.changedTouches[0].clientX;
+        const dy = sy - e.changedTouches[0].clientY;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) goTo(gIdx + (dx > 0 ? 1 : -1));
+        else if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && gImgs[gIdx]) openLightbox(gIdx);
+    }, { passive: true });
+})();
+
+/* FULL-PAGE LIGHTBOX */
+const lightbox = document.getElementById('lightbox');
+const lbViewport = document.getElementById('lightbox-viewport');
+const lbTrack = document.getElementById('lightbox-track');
+const lbLoupe = document.getElementById('lightbox-loupe');
+const lbLoupeImg = lbLoupe.querySelector('img');
+const lbCounter = document.getElementById('lightbox-counter');
+const LOUPE_SIZE = 160;
+const LOUPE_ZOOM = 2.5;
+const touchMq = window.matchMedia('(max-width: 1024px)');
+
+let lbIdx = 0;
+let lbLoupeOn = false;
+let lbScale = 1, lbTx = 0, lbTy = 0;
+let pinchStartDist = 0, pinchStartScale = 1;
+let panStartX = 0, panStartY = 0, panOriginTx = 0, panOriginTy = 0;
+
+function isTouchDevice() { return touchMq.matches; }
+
+function getLbImg(i) {
+    const slide = lbTrack.querySelectorAll('.lightbox-slide')[i ?? lbIdx];
+    return slide ? slide.querySelector('img') : null;
+}
+
+function resetLbZoom() {
+    lbScale = 1; lbTx = 0; lbTy = 0;
+    lbTrack.querySelectorAll('.lightbox-slide img').forEach(img => { img.style.transform = ''; });
+}
+
+function applyLbTransform(img) {
+    if (!img) return;
+    img.style.transform = lbScale === 1 && lbTx === 0 && lbTy === 0
+        ? '' : `translate(${lbTx}px, ${lbTy}px) scale(${lbScale})`;
+}
+
+function hideLoupe() {
+    lbLoupeOn = false;
+    lbLoupe.classList.remove('visible');
+    lbViewport.classList.remove('loupe-on');
+}
+
+function updateLoupe(clientX, clientY) {
+    const img = getLbImg();
+    if (!img) return;
+    const imgRect = img.getBoundingClientRect();
+    if (clientX < imgRect.left || clientX > imgRect.right || clientY < imgRect.top || clientY > imgRect.bottom) {
+        lbLoupe.classList.remove('visible');
+        return;
+    }
+    const relX = (clientX - imgRect.left) / imgRect.width;
+    const relY = (clientY - imgRect.top) / imgRect.height;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let left = clientX - LOUPE_SIZE / 2;
+    let top = clientY - LOUPE_SIZE / 2;
+    left = Math.max(8, Math.min(left, vw - LOUPE_SIZE - 8));
+    top = Math.max(8, Math.min(top, vh - LOUPE_SIZE - 8));
+    lbLoupe.style.left = left + 'px';
+    lbLoupe.style.top = top + 'px';
+    lbLoupeImg.src = img.currentSrc || img.src;
+    lbLoupeImg.style.width = imgRect.width * LOUPE_ZOOM + 'px';
+    lbLoupeImg.style.height = imgRect.height * LOUPE_ZOOM + 'px';
+    lbLoupeImg.style.left = -(relX * imgRect.width * LOUPE_ZOOM - LOUPE_SIZE / 2) + 'px';
+    lbLoupeImg.style.top = -(relY * imgRect.height * LOUPE_ZOOM - LOUPE_SIZE / 2) + 'px';
+    lbLoupe.classList.add('visible');
+}
+
+function buildLightbox(startIdx) {
+    lbIdx = startIdx;
+    resetLbZoom();
+    hideLoupe();
+    lbTrack.innerHTML = gImgs.map((src, i) => src
+        ? `<div class="lightbox-slide"><img src="${ebayImg(src, 1600)}" alt="Product Image ${i + 1}" decoding="async"></div>`
+        : `<div class="lightbox-slide"><div class="gallery-ph">${watchSVG(90)}</div></div>`
+    ).join('');
+    lbGoTo(lbIdx, false);
+    const multi = gImgs.filter(Boolean).length > 1;
+    document.getElementById('lb-prev').classList.toggle('hide', !multi);
+    document.getElementById('lb-next').classList.toggle('hide', !multi);
+    lbViewport.classList.toggle('desktop-zoom', !isTouchDevice());
+}
+
+function lbGoTo(i, syncModal) {
+    if (!gImgs.length) return;
+    lbIdx = ((i % gImgs.length) + gImgs.length) % gImgs.length;
+    resetLbZoom();
+    hideLoupe();
+    lbTrack.style.transform = `translateX(-${lbIdx * 100}%)`;
+    const total = gImgs.filter(Boolean).length;
+    lbCounter.textContent = total > 1 ? `${lbIdx + 1} / ${total}` : '';
+    if (syncModal !== false) {
+        gIdx = lbIdx;
+        document.getElementById('gallery-track').style.transform = `translateX(-${gIdx * 100}%)`;
+        document.querySelectorAll('.gallery-dot').forEach((d, j) => d.classList.toggle('on', j === gIdx));
+    }
+}
+
+function openLightbox(idx) {
+    if (!gImgs[idx]) return;
+    buildLightbox(idx);
+    lightbox.classList.add('open');
+}
+
+function closeLightbox() {
+    hideLoupe();
+    resetLbZoom();
+    lightbox.classList.remove('open');
+}
+
+document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+document.getElementById('lb-prev').addEventListener('click', () => lbGoTo(lbIdx - 1));
+document.getElementById('lb-next').addEventListener('click', () => lbGoTo(lbIdx + 1));
+
+lbViewport.addEventListener('click', e => {
+    if (isTouchDevice() || e.target.tagName !== 'IMG') return;
+    lbLoupeOn = !lbLoupeOn;
+    lbViewport.classList.toggle('loupe-on', lbLoupeOn);
+    if (lbLoupeOn) updateLoupe(e.clientX, e.clientY);
+    else hideLoupe();
+});
+
+lbViewport.addEventListener('mousemove', e => {
+    if (!isTouchDevice() && lbLoupeOn) updateLoupe(e.clientX, e.clientY);
+});
+
+lbViewport.addEventListener('mouseleave', () => {
+    if (!isTouchDevice()) hideLoupe();
+});
+
+touchMq.addEventListener('change', () => {
+    hideLoupe();
+    lbViewport.classList.toggle('desktop-zoom', !isTouchDevice());
+});
+
+function touchDist(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+}
+
+(function(){
+    let sx = 0, sy = 0, swiping = false, pinching = false;
+
+    lbViewport.addEventListener('touchstart', e => {
+        if (!isTouchDevice()) return;
+        if (e.touches.length === 2) {
+            pinching = true; swiping = false;
+            pinchStartDist = touchDist(e.touches);
+            pinchStartScale = lbScale;
             return;
         }
-        const dx = sx - e.changedTouches[0].clientX, dy = sy - e.changedTouches[0].clientY;
-        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) goTo(gIdx + (dx > 0 ? 1 : -1));
+        if (lbScale > 1) {
+            panStartX = e.touches[0].clientX;
+            panStartY = e.touches[0].clientY;
+            panOriginTx = lbTx; panOriginTy = lbTy;
+            return;
+        }
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+        swiping = true;
+    }, { passive: true });
+
+    lbViewport.addEventListener('touchmove', e => {
+        if (!isTouchDevice()) return;
+        const img = getLbImg();
+        if (e.touches.length === 2 && pinching) {
+            e.preventDefault();
+            const dist = touchDist(e.touches);
+            lbScale = Math.min(5, Math.max(1, pinchStartScale * (dist / pinchStartDist)));
+            applyLbTransform(img);
+            return;
+        }
+        if (lbScale > 1 && e.touches.length === 1) {
+            e.preventDefault();
+            lbTx = panOriginTx + (e.touches[0].clientX - panStartX);
+            lbTy = panOriginTy + (e.touches[0].clientY - panStartY);
+            applyLbTransform(img);
+        }
+    }, { passive: false });
+
+    lbViewport.addEventListener('touchend', e => {
+        if (!isTouchDevice()) return;
+        if (pinching && e.touches.length < 2) {
+            pinching = false;
+            if (lbScale < 1.05) resetLbZoom();
+            return;
+        }
+        if (lbScale > 1) return;
+        if (!swiping) return;
+        swiping = false;
+        const dx = sx - e.changedTouches[0].clientX;
+        const dy = sy - e.changedTouches[0].clientY;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) lbGoTo(lbIdx + (dx > 0 ? 1 : -1));
     }, { passive: true });
 })();
 
@@ -662,14 +796,20 @@ function openModal(idx) {
     }
 }
 
-function closeModal() { resetZoom(); backdrop.classList.remove('open'); document.body.style.overflow=''; }
-document.getElementById('modal-close').addEventListener('click',closeModal);
-backdrop.addEventListener('click',e=>{ if(e.target===backdrop) closeModal(); });
-document.addEventListener('keydown',e=>{
-    if(!backdrop.classList.contains('open'))return;
-    if(e.key==='Escape') closeModal();
-    if(e.key==='ArrowLeft') goTo(gIdx-1);
-    if(e.key==='ArrowRight') goTo(gIdx+1);
+function closeModal() { closeLightbox(); backdrop.classList.remove('open'); document.body.style.overflow = ''; }
+document.getElementById('modal-close').addEventListener('click', closeModal);
+backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+document.addEventListener('keydown', e => {
+    if (lightbox.classList.contains('open')) {
+        if (e.key === 'Escape') { if (lbLoupeOn) { hideLoupe(); return; } closeLightbox(); return; }
+        if (e.key === 'ArrowLeft') lbGoTo(lbIdx - 1);
+        if (e.key === 'ArrowRight') lbGoTo(lbIdx + 1);
+        return;
+    }
+    if (!backdrop.classList.contains('open')) return;
+    if (e.key === 'Escape') closeModal();
+    if (e.key === 'ArrowLeft') goTo(gIdx - 1);
+    if (e.key === 'ArrowRight') goTo(gIdx + 1);
 });
 
 /* MOBILE NAV */
