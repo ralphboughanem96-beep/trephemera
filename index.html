@@ -342,7 +342,7 @@ function renderFeatured(items) {
         </a>`).join('');
 }
 function loadFeatured() {
-    fetch('/.netlify/functions/ebay-listings')
+    fetch('/api/ebay-listings')
         .then(r => r.json())
         .then(items => {
             if (!items || !items.length) throw new Error('empty');
