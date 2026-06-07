@@ -13,6 +13,8 @@
     <link rel="canonical" href="https://trephemera.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://i.ebayimg.com" crossorigin>
+    <link rel="dns-prefetch" href="https://i.ebayimg.com">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -311,6 +313,14 @@ document.querySelectorAll('a[href]').forEach(a => {
     });
 });
 
+/* IMAGE HELPER — rewrite eBay image URLs to a chosen resolution */
+function ebayImg(url, size) {
+    if (!url) return url;
+    return url
+        .replace('/thumbs/images/', '/images/')
+        .replace(/s-l\d+(?=\.(jpg|jpeg|png|webp|avif)(\?|$))/i, 's-l' + size);
+}
+
 /* WATCH SVG */
 function watchSVG() {
     return `<svg class="watch-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="24" stroke="#c49a6c" stroke-width="1"/><circle cx="40" cy="40" r="20" stroke="#c49a6c" stroke-width=".5"/><line x1="40" y1="20" x2="40" y2="25" stroke="#c49a6c" stroke-width="1.5"/><line x1="40" y1="55" x2="40" y2="60" stroke="#c49a6c" stroke-width="1.5"/><line x1="20" y1="40" x2="25" y2="40" stroke="#c49a6c" stroke-width="1.5"/><line x1="55" y1="40" x2="60" y2="40" stroke="#c49a6c" stroke-width="1.5"/><line x1="40" y1="40" x2="40" y2="27" stroke="#c49a6c" stroke-width="1.5" stroke-linecap="round"/><line x1="40" y1="40" x2="49" y2="45" stroke="#c49a6c" stroke-width="1" stroke-linecap="round"/><circle cx="40" cy="40" r="2" fill="#c49a6c"/><rect x="28" y="13" width="24" height="6" rx="1" stroke="#c49a6c" stroke-width=".5"/><rect x="28" y="61" width="24" height="6" rx="1" stroke="#c49a6c" stroke-width=".5"/></svg>`;
@@ -319,9 +329,9 @@ function watchSVG() {
 /* FEATURED — live API with placeholder fallback */
 function renderFeatured(items) {
     document.getElementById('listings-container').innerHTML = items.map((p,i) => `
-        <a href="collections.html" class="listing-card" style="animation:fadeUp .4s ease ${(i*.08).toFixed(2)}s both">
+        <a href="collections.html" class="listing-card" style="animation:fadeUp .4s ease ${Math.min(i*.06,.35).toFixed(2)}s both">
             <div class="listing-img-wrap">
-                ${p.image ? `<img src="${p.image}" alt="${p.title}" style="width:100%;height:100%;object-fit:cover;">` : `<div class="listing-placeholder">${watchSVG()}</div>`}
+                ${p.image ? `<img src="${ebayImg(p.image,600)}" srcset="${ebayImg(p.image,400)} 400w, ${ebayImg(p.image,600)} 600w, ${ebayImg(p.image,900)} 900w" sizes="(max-width:720px) 90vw, (max-width:1100px) 45vw, 30vw" alt="${p.title}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">` : `<div class="listing-placeholder">${watchSVG()}</div>`}
                 <div class="listing-cta">View Details</div>
             </div>
             <div class="listing-body">
