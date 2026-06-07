@@ -415,25 +415,28 @@ function translateCondition(c) {
     return CONDITION_EN[c.trim().toLowerCase()] || c;
 }
 
+function mapItem(item) {
+    const brand = detectBrand(item.title);
+    return {
+        bk:     brand.key,
+        bl:     brand.label,
+        title:  stripBrandFromTitle(item.title, brand.label),
+        price:  `${item.price?.currency || '€'} ${parseFloat(item.price?.value || 0).toFixed(2)}`,
+        type:   translateCondition(item.condition),
+        images: [item.image?.imageUrl, ...(item.additionalImages || []).map(x => x.imageUrl)].filter(Boolean),
+        desc:   item.shortDescription || '',
+        url:    item.itemWebUrl,
+        itemId: item.itemId,
+        sold:   item.sellingState === 'ENDED' || item.sold === true
+    };
+}
+
 async function fetchItems() {
     const res = await fetch('/api/ebay-listings');
     if (!res.ok) throw new Error('API error');
     const items = await res.json();
-    return items.map(item => {
-        const brand = detectBrand(item.title);
-        return {
-            bk:     brand.key,
-            bl:     brand.label,
-            title:  stripBrandFromTitle(item.title, brand.label),
-            price:  `${item.price?.currency || '€'} ${parseFloat(item.price?.value || 0).toFixed(2)}`,
-            type:   translateCondition(item.condition),
-            images: [item.image?.imageUrl, ...(item.additionalImages || []).map(x => x.imageUrl)].filter(Boolean),
-            desc:   item.shortDescription || '',
-            url:    item.itemWebUrl,
-            itemId: item.itemId,
-            sold:   item.sellingState === 'ENDED' || item.sold === true
-        };
-    });
+    const mapped = items.map(mapItem);
+    return [...mapped.filter(i => !i.sold), ...mapped.filter(i => i.sold)];
 }
 
 async function fetchFullItem(itemId) {
