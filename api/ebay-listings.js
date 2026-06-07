@@ -1,17 +1,241 @@
-// Trephemera — eBay API Proxy (Vercel, raw Node response API for max compatibility)
-// Env vars: EBAY_APP_ID, EBAY_CERT_ID, EBAY_SELLER
+// Trephemera — eBay API Proxy
+// Env: EBAY_APP_ID, EBAY_CERT_ID, EBAY_SELLER, EBAY_DEV_ID (optional), EBAY_USER_REFRESH_TOKEN
 
-let cachedToken = null;
-let tokenExpiry  = 0;
+let cachedAppToken = null;
+let appTokenExpiry = 0;
+let cachedUserToken = null;
+let userTokenExpiry = 0;
+
+const TRADING_URL = 'https://api.ebay.com/ws/api.dll';
+const SITE_ID = '23'; // eBay Belgium
+const OAUTH_SCOPE = process.env.EBAY_OAUTH_SCOPES || 'https://api.ebay.com/oauth/api_scope';
+
+function stripHtml(html) {
+    return (html || '')
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function extractTag(xml, tag) {
+    const re = new RegExp(`<${tag}[^>]*>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/${tag}>`, 'i');
+    const m = (xml || '').match(re);
+    return m ? m[1].trim() : '';
+}
+
+function extractAllTags(xml, tag) {
+    const re = new RegExp(`<${tag}[^>]*>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/${tag}>`, 'gi');
+    const out = [];
+    let m;
+    while ((m = re.exec(xml || '')) !== null) out.push(m[1].trim());
+    return out;
+}
+
+function extractItemBlocks(xml) {
+    const items = [];
+    const re = /<Item>([\s\S]*?)<\/Item>/gi;
+    let m;
+    while ((m = re.exec(xml || '')) !== null) items.push(m[1]);
+    return items;
+}
+
+function legacyIdFromBrowseId(id) {
+    const parts = (id || '').split('|');
+    return parts.length >= 2 ? parts[1] : id;
+}
+
+function normalizeBrowseItem(item, sold = false) {
+    const desc = stripHtml(item.description) || item.shortDescription || '';
+    return {
+        itemId: item.itemId,
+        title: item.title,
+        price: item.price,
+        condition: item.condition,
+        image: item.image,
+        additionalImages: item.additionalImages || [],
+        itemWebUrl: item.itemWebUrl,
+        shortDescription: desc,
+        sold
+    };
+}
+
+function normalizeTradingSoldItem(block) {
+    const itemId = extractTag(block, 'ItemID');
+    const pictureUrls = extractAllTags(block, 'PictureURL');
+    const galleryUrl = extractTag(block, 'GalleryURL');
+    const mainImage = galleryUrl || pictureUrls[0] || '';
+    const priceVal = extractTag(block, 'CurrentPrice') || extractTag(block, 'ConvertedCurrentPrice');
+    const priceMatch = block.match(/<(?:CurrentPrice|ConvertedCurrentPrice)[^>]*currencyID="([^"]+)"/i);
+    const currency = priceMatch ? priceMatch[1] : 'EUR';
+
+    return {
+        itemId,
+        title: extractTag(block, 'Title'),
+        price: priceVal ? { value: priceVal, currency } : null,
+        condition: extractTag(block, 'ConditionDisplayName'),
+        image: mainImage ? { imageUrl: mainImage } : undefined,
+        additionalImages: pictureUrls.filter(u => u !== mainImage).map(url => ({ imageUrl: url })),
+        itemWebUrl: extractTag(block, 'ViewItemURL'),
+        shortDescription: stripHtml(extractTag(block, 'Description')) || '',
+        sold: true
+    };
+}
+
+async function getAppToken(appId, certId) {
+    if (cachedAppToken && Date.now() < appTokenExpiry) return cachedAppToken;
+    const creds = Buffer.from(`${appId}:${certId}`).toString('base64');
+    const r = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
+        method: 'POST',
+        headers: { 'Authorization': `Basic ${creds}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope'
+    });
+    const d = await r.json();
+    if (!d.access_token) throw new Error('Could not get eBay access token');
+    cachedAppToken = d.access_token;
+    appTokenExpiry = Date.now() + ((d.expires_in || 7200) - 60) * 1000;
+    return cachedAppToken;
+}
+
+async function getUserToken(appId, certId) {
+    const refresh = process.env.EBAY_USER_REFRESH_TOKEN;
+    if (!refresh) return null;
+
+    if (cachedUserToken && Date.now() < userTokenExpiry) return cachedUserToken;
+
+    const creds = Buffer.from(`${appId}:${certId}`).toString('base64');
+    const r = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
+        method: 'POST',
+        headers: { 'Authorization': `Basic ${creds}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(refresh)}&scope=${encodeURIComponent(OAUTH_SCOPE)}`
+    });
+    const d = await r.json();
+    if (!d.access_token) return null;
+
+    cachedUserToken = d.access_token;
+    userTokenExpiry = Date.now() + ((d.expires_in || 7200) - 60) * 1000;
+    return cachedUserToken;
+}
+
+async function tradingCall(callName, xml, userToken, appId, devId, certId) {
+    const headers = {
+        'X-EBAY-API-CALL-NAME': callName,
+        'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
+        'X-EBAY-API-SITEID': SITE_ID,
+        'X-EBAY-API-IAF-TOKEN': userToken,
+        'Content-Type': 'text/xml'
+    };
+    if (devId) headers['X-EBAY-API-DEV-NAME'] = devId;
+    if (appId) headers['X-EBAY-API-APP-NAME'] = appId;
+    if (certId) headers['X-EBAY-API-CERT-NAME'] = certId;
+
+    const r = await fetch(TRADING_URL, { method: 'POST', headers, body: xml });
+    return r.text();
+}
+
+async function fetchSoldViaTrading(userToken, appId, devId, certId) {
+    const allBlocks = [];
+    let page = 1;
+    let totalPages = 1;
+
+    while (page <= totalPages) {
+        const xml = `<?xml version="1.0" encoding="utf-8"?>
+<GetMyeBaySellingRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+  <DetailLevel>ReturnAll</DetailLevel>
+  <SoldList>
+    <Include>true</Include>
+    <DurationInDays>60</DurationInDays>
+    <Pagination>
+      <EntriesPerPage>200</EntriesPerPage>
+      <PageNumber>${page}</PageNumber>
+    </Pagination>
+  </SoldList>
+</GetMyeBaySellingRequest>`;
+
+        const response = await tradingCall('GetMyeBaySelling', xml, userToken, appId, devId, certId);
+        const ack = extractTag(response, 'Ack');
+        if (ack !== 'Success' && ack !== 'Warning') return [];
+
+        const soldList = response.match(/<SoldList>([\s\S]*?)<\/SoldList>/i)?.[1] || response;
+        allBlocks.push(...extractItemBlocks(soldList));
+
+        const pages = parseInt(extractTag(soldList, 'TotalNumberOfPages'), 10);
+        totalPages = Number.isFinite(pages) && pages > 0 ? pages : 1;
+        page++;
+    }
+
+    return allBlocks.map(normalizeTradingSoldItem).filter(i => i.itemId);
+}
+
+async function fetchBrowseItem(ebayHeaders, id) {
+    const trimmed = (id || '').trim();
+    if (!trimmed) return null;
+
+    let r;
+    if (trimmed.includes('|')) {
+        r = await fetch(
+            `https://api.ebay.com/buy/browse/v1/item/${encodeURIComponent(trimmed)}`,
+            { headers: ebayHeaders }
+        );
+    } else {
+        r = await fetch(
+            `https://api.ebay.com/buy/browse/v1/item/get_item_by_legacy_id?legacy_item_id=${encodeURIComponent(trimmed)}`,
+            { headers: ebayHeaders }
+        );
+    }
+
+    const item = await r.json();
+    if (item.errors) return null;
+    return item;
+}
+
+async function enrichSoldItem(tradingItem, ebayHeaders, userToken, appId, devId, certId) {
+    const browseItem = await fetchBrowseItem(ebayHeaders, tradingItem.itemId);
+    if (browseItem) return normalizeBrowseItem(browseItem, true);
+
+    if (userToken && !tradingItem.shortDescription) {
+        const getItemXml = `<?xml version="1.0" encoding="utf-8"?>
+<GetItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+  <ItemID>${tradingItem.itemId}</ItemID>
+  <DetailLevel>ReturnAll</DetailLevel>
+</GetItemRequest>`;
+        const response = await tradingCall('GetItem', getItemXml, userToken, appId, devId, certId);
+        if (extractTag(response, 'Ack') === 'Success') {
+            const block = response.match(/<Item>([\s\S]*?)<\/Item>/i)?.[1];
+            if (block) return normalizeTradingSoldItem(block);
+        }
+    }
+
+    return tradingItem;
+}
+
+async function fetchSoldItems(appId, devId, certId, ebayHeaders) {
+    const userToken = await getUserToken(appId, certId);
+    if (!userToken) return [];
+
+    const tradingSold = await fetchSoldViaTrading(userToken, appId, devId, certId);
+    const sold = [];
+    for (const item of tradingSold) {
+        sold.push(await enrichSoldItem(item, ebayHeaders, userToken, appId, devId, certId));
+    }
+    return sold;
+}
+
+function isActiveDuplicate(soldItem, activeIds) {
+    if (activeIds.has(soldItem.itemId)) return true;
+    const legacy = legacyIdFromBrowseId(soldItem.itemId);
+    if (legacy && activeIds.has(legacy)) return true;
+    return false;
+}
 
 module.exports = async (req, res) => {
     const APP_ID  = process.env.EBAY_APP_ID;
     const CERT_ID = process.env.EBAY_CERT_ID;
+    const DEV_ID  = process.env.EBAY_DEV_ID || '';
     const SELLER  = process.env.EBAY_SELLER || 'trephemera';
 
     const LIST_CACHE = 'public, max-age=300, s-maxage=604800, stale-while-revalidate=86400';
 
-    // Raw response helper — uses only methods that always exist on the Node response
     function send(status, cacheControl, payload) {
         res.statusCode = status;
         res.setHeader('Access-Control-Allow-Origin', '*');
@@ -27,51 +251,50 @@ module.exports = async (req, res) => {
         return;
     }
 
-    async function getToken() {
-        if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
-        const creds = Buffer.from(`${APP_ID}:${CERT_ID}`).toString('base64');
-        const r = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
-            method: 'POST',
-            headers: { 'Authorization': `Basic ${creds}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope'
-        });
-        const d = await r.json();
-        if (!d.access_token) throw new Error('Could not get eBay access token');
-        cachedToken = d.access_token;
-        tokenExpiry = Date.now() + ((d.expires_in || 7200) - 60) * 1000;
-        return cachedToken;
-    }
-
     try {
-        const token = await getToken();
+        const token = await getAppToken(APP_ID, CERT_ID);
         const ebayHeaders = { 'Authorization': `Bearer ${token}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_BE' };
 
-        // Parse itemId straight from the URL (no helper dependency)
         const url = new URL(req.url, 'http://localhost');
         const itemId = url.searchParams.get('itemId');
 
-        // Single item detail (modal popup)
         if (itemId) {
-            const r = await fetch(
-                `https://api.ebay.com/buy/browse/v1/item/${encodeURIComponent(itemId)}`,
-                { headers: ebayHeaders }
-            );
-            const item = await r.json();
-            if (item.errors) throw new Error(item.errors[0].message);
-            const images = [
-                item.image?.imageUrl,
-                ...(item.additionalImages || []).map(x => x.imageUrl)
-            ].filter(Boolean);
-            const desc = (item.description || '')
-                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-                .replace(/<[^>]+>/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-            send(200, LIST_CACHE, { desc, images });
-            return;
+            const browseItem = await fetchBrowseItem(ebayHeaders, itemId);
+            if (browseItem) {
+                const images = [
+                    browseItem.image?.imageUrl,
+                    ...(browseItem.additionalImages || []).map(x => x.imageUrl)
+                ].filter(Boolean);
+                send(200, LIST_CACHE, { desc: stripHtml(browseItem.description), images });
+                return;
+            }
+
+            const userToken = await getUserToken(APP_ID, CERT_ID);
+            const legacyId = legacyIdFromBrowseId(itemId);
+            if (userToken && legacyId) {
+                const getItemXml = `<?xml version="1.0" encoding="utf-8"?>
+<GetItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+  <ItemID>${legacyId}</ItemID>
+  <DetailLevel>ReturnAll</DetailLevel>
+</GetItemRequest>`;
+                const response = await tradingCall('GetItem', getItemXml, userToken, APP_ID, DEV_ID, CERT_ID);
+                if (extractTag(response, 'Ack') === 'Success') {
+                    const block = response.match(/<Item>([\s\S]*?)<\/Item>/i)?.[1];
+                    if (block) {
+                        const normalized = normalizeTradingSoldItem(block);
+                        const images = [
+                            normalized.image?.imageUrl,
+                            ...normalized.additionalImages.map(x => x.imageUrl)
+                        ].filter(Boolean);
+                        send(200, LIST_CACHE, { desc: normalized.shortDescription, images });
+                        return;
+                    }
+                }
+            }
+
+            throw new Error('Item not found');
         }
 
-        // Full store: 3 categories, concurrent, deduplicated
         const categories = ['281', '1', '371'];
         const sellerFilter = `sellers:%7B${SELLER}%7D`;
         const results = await Promise.all(categories.map(catId =>
@@ -88,7 +311,19 @@ module.exports = async (req, res) => {
             }
         }
 
-        send(200, LIST_CACHE, Array.from(unique.values()));
+        const active = Array.from(unique.values());
+        const sold = await fetchSoldItems(APP_ID, DEV_ID, CERT_ID, ebayHeaders);
+
+        const activeIds = new Set();
+        for (const item of active) {
+            activeIds.add(item.itemId);
+            const legacy = legacyIdFromBrowseId(item.itemId);
+            if (legacy) activeIds.add(legacy);
+        }
+
+        const soldOnly = sold.filter(i => !isActiveDuplicate(i, activeIds));
+
+        send(200, LIST_CACHE, [...active, ...soldOnly]);
 
     } catch (err) {
         send(500, 'no-store', { error: err.message });

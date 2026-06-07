@@ -2,10 +2,12 @@
   "version": 2,
   "builds": [
     { "src": "api/ebay-listings.js", "use": "@vercel/node" },
+    { "src": "api/ebay-auth.js", "use": "@vercel/node" },
     { "src": "*.html", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/ebay-listings", "dest": "/api/ebay-listings.js" },
+    { "src": "/api/ebay-auth", "dest": "/api/ebay-auth.js" },
     { "handle": "filesystem" },
     { "src": "/", "dest": "/index.html" }
   ]

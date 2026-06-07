@@ -75,6 +75,16 @@
         .f-count { font-size:0.9rem; padding:2px 8px; border-radius:20px; background:rgba(0,0,0,0.08); color:var(--navy); }
         .filter-tab.active .f-count { background:rgba(255,255,255,0.2); color:var(--cream); }
 
+        .filter-select-wrap { display:none; }
+        .filter-select {
+            width:100%; padding:12px 16px; border:1px solid rgba(0,0,0,0.15); border-radius:6px;
+            background:#fff; color:var(--navy); font-family:inherit; font-size:1.05rem; font-weight:600;
+            letter-spacing:1px; text-transform:uppercase; cursor:pointer; appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%230a1520' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 16px center; padding-right:40px;
+        }
+        .filter-select:focus { outline:3px solid var(--rose-gold); outline-offset:2px; }
+
         /* RESULTS & WRAP: Cream background updates */
         .results-bar { background:var(--cream); padding:20px var(--pad) 0; text-align:center; }
         .results-bar-inner { max-width:1400px; margin:0 auto; }
@@ -119,15 +129,10 @@
         .modal-close svg { width:16px; height:16px; stroke:var(--cream); fill:none; stroke-width:2; stroke-linecap:round; }
 
         .gallery-panel { background:var(--navy); position:relative; display:flex; flex-direction:column; min-height:0; }
-        .gallery-viewport { position:relative; flex:1; overflow:hidden; min-height:300px; touch-action:pan-y; cursor:zoom-in; }
-        
-        /* UPDATE 11: Zoom features */
-        .gallery-viewport.zoomed { cursor:grab; overflow:hidden; touch-action:none; }
-        .gallery-viewport.zoomed:active { cursor:grabbing; }
+        .gallery-viewport { position:relative; flex:1; overflow:hidden; min-height:300px; touch-action:pan-y; cursor:pointer; }
         .gallery-track { display:flex; height:100%; transition:transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
         .gallery-slide { flex:0 0 100%; height:100%; display:flex; align-items:center; justify-content:center; position:relative; }
-        .gallery-slide img { width:100%; height:100%; object-fit:contain; transition:transform 0.2s ease-out; transform-origin:center; }
-        .gallery-slide img.active-zoom { transform:scale(2.5); }
+        .gallery-slide img { width:100%; height:100%; object-fit:contain; pointer-events:none; }
         
         .gallery-ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--navy),var(--navy-light)); }
         .gallery-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:5; width:40px; height:40px; background:rgba(10,21,32,0.7); border:1px solid rgba(196,154,108,0.3); border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.2s; }
@@ -164,6 +169,55 @@
         .buy-btn:hover { background:var(--rose-gold-lt); letter-spacing:5px; }
         .buy-btn svg { width:16px; height:16px; stroke:var(--navy); fill:none; stroke-width:2; stroke-linecap:round; }
 
+        /* FULL-PAGE LIGHTBOX */
+        .lightbox {
+            position:fixed; inset:0; z-index:400; background:rgba(0,0,0,0.96);
+            display:flex; flex-direction:column; opacity:0; visibility:hidden;
+            transition:opacity 0.25s, visibility 0.25s;
+        }
+        .lightbox.open { opacity:1; visibility:visible; }
+        .lightbox-close {
+            position:absolute; top:16px; right:16px; z-index:10; width:44px; height:44px;
+            background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:50%;
+            cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.2s;
+        }
+        .lightbox-close:hover { background:rgba(255,255,255,0.2); }
+        .lightbox-close svg { width:18px; height:18px; stroke:#fff; fill:none; stroke-width:2; stroke-linecap:round; }
+        .lightbox-counter {
+            position:absolute; top:20px; left:50%; transform:translateX(-50%); z-index:10;
+            font-size:0.95rem; letter-spacing:2px; color:rgba(255,255,255,0.7); text-transform:uppercase;
+        }
+        .lightbox-viewport {
+            flex:1; position:relative; overflow:hidden; min-height:0;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .lightbox-viewport.loupe-zoom { cursor:zoom-in; }
+        .lightbox-viewport.loupe-zoom.loupe-on { cursor:none; }
+        .lightbox-track {
+            display:flex; height:100%; width:100%; transition:transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
+        }
+        .lightbox-slide {
+            flex:0 0 100%; height:100%; display:flex; align-items:center; justify-content:center;
+            overflow:hidden;
+        }
+        .lightbox-slide img {
+            max-width:100%; max-height:100%; object-fit:contain; user-select:none;
+            -webkit-user-drag:none;
+        }
+        .lightbox-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:5; }
+        .lightbox-arrow.prev { left:12px; }
+        .lightbox-arrow.next { right:12px; }
+        .zoom-loupe {
+            display:none; position:fixed; width:280px; height:210px; border-radius:4px;
+            border:2px solid var(--rose-gold); overflow:hidden; pointer-events:none; z-index:410;
+            box-shadow:0 6px 32px rgba(0,0,0,0.65); background:#000;
+        }
+        .zoom-loupe.visible { display:block; }
+        .zoom-loupe img { position:absolute; max-width:none; object-fit:contain; }
+        @media (max-width:1024px) {
+            .zoom-loupe { width:min(38vmin, 168px); height:min(28.5vmin, 126px); }
+        }
+
         footer { background:var(--navy); border-top:1px solid rgba(196,154,108,0.1); padding:36px var(--pad); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
         .footer-logo { font-size:1.3rem; font-weight:600; letter-spacing:4px; color:var(--rose-gold); text-transform:uppercase; }
         .footer-copy { font-size:1rem; letter-spacing:2px; color:var(--muted); text-transform:uppercase; }
@@ -175,6 +229,11 @@
             .modal { grid-template-columns:1fr; height:90vh; grid-template-rows:auto 1fr; }
             .gallery-panel { height:40vh; }
             .gallery-viewport { min-height:200px; }
+        }
+        @media (max-width:1024px) {
+            .filter-bar { display:none; }
+            .filter-select-wrap { display:block; }
+            .filter-section { padding:10px 0; }
         }
         @media (max-width:640px) {
             .nav-links { display:none; }
@@ -217,6 +276,9 @@
     <div class="filter-section">
         <div class="filter-wrapper">
             <div class="filter-bar" id="filter-bar" role="tablist" aria-label="Brand filters"></div>
+            <div class="filter-select-wrap">
+                <select class="filter-select" id="filter-select" aria-label="Filter by brand"></select>
+            </div>
         </div>
     </div>
 
@@ -229,7 +291,7 @@
     <div class="modal" id="modal">
         <button class="modal-close" id="modal-close" aria-label="Close modal"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         <div class="gallery-panel">
-            <div class="gallery-viewport" id="gallery-viewport" aria-label="Image gallery. Click to zoom.">
+            <div class="gallery-viewport" id="gallery-viewport" aria-label="Image gallery. Tap to view full screen.">
                 <div class="gallery-track" id="gallery-track"></div>
                 <button class="gallery-arrow prev hide" id="g-prev" aria-label="Previous image"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
                 <button class="gallery-arrow next hide" id="g-next" aria-label="Next image"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
@@ -248,6 +310,17 @@
             <div class="modal-sticky-footer" id="modal-footer"></div>
         </div>
     </div>
+</div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Full screen image viewer">
+    <button class="lightbox-close" id="lightbox-close" aria-label="Close full screen view"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="lightbox-counter" id="lightbox-counter"></div>
+    <div class="lightbox-viewport" id="lightbox-viewport">
+        <div class="lightbox-track" id="lightbox-track"></div>
+        <button class="gallery-arrow lightbox-arrow prev hide" id="lb-prev" aria-label="Previous image"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <button class="gallery-arrow lightbox-arrow next hide" id="lb-next" aria-label="Next image"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+    <div class="zoom-loupe" id="lightbox-loupe"><img alt=""></div>
 </div>
 
 <footer>
@@ -283,15 +356,31 @@ const BRANDS = [
     { key:'jaeger-lecoultre', label:'Jaeger-LeCoultre', terms:['jaeger-lecoultre','jaeger lecoultre','jaeger'] },
     { key:'breguet', label:'Breguet', terms:['breguet'] },
     { key:'omega', label:'Omega', terms:['omega'] },
-    { key:'cartier', label:'Cartier', terms:['cartier'] }
+    { key:'cartier', label:'Cartier', terms:['cartier'] },
+    { key:'christophe-claret', label:'Christophe Claret', terms:['christophe claret','christophe'] },
+    { key:'de-bethune', label:'De Bethune', terms:['de bethune'] },
+    { key:'greubel-forsey', label:'Greubel Forsey', terms:['greubel forsey','greubel'] },
+    { key:'tag-heuer', label:'Tag Heuer', terms:['tag heuer','tag-heuer'] }
 ];
+const BRAND_ALIASES = {
+    'christophe': { key:'christophe-claret', label:'Christophe Claret' },
+    'de':         { key:'de-bethune',       label:'De Bethune' },
+    'greubel':    { key:'greubel-forsey',   label:'Greubel Forsey' },
+    'tag':        { key:'tag-heuer',        label:'Tag Heuer' }
+};
 const STOPWORDS = new Set(['the','a','an','rare','vintage','original','genuine','authentic','official','new','old','antique','set','lot','watch','watches']);
 function slugify(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'other'; }
 function detectBrand(title) {
     const t = (title || '').toLowerCase();
     for (const b of BRANDS) if (b.terms.some(s => t.includes(s))) return { key:b.key, label:b.label };
     const words = (title || '').replace(/[^A-Za-z0-9&.\- ]/g,' ').split(/\s+/).filter(Boolean);
+    for (let i = 0; i < words.length - 1; i++) {
+        const pair = (words[i] + ' ' + words[i + 1]).toLowerCase();
+        for (const b of BRANDS) if (b.terms.some(s => pair.includes(s) || s.includes(pair))) return { key:b.key, label:b.label };
+    }
     const first = words.find(w => !STOPWORDS.has(w.toLowerCase())) || words[0] || 'Other';
+    const alias = BRAND_ALIASES[first.toLowerCase()];
+    if (alias) return alias;
     const label = first.charAt(0).toUpperCase() + first.slice(1);
     return { key: slugify(label), label };
 }
@@ -312,32 +401,42 @@ const DATA = [
 ];
 
 const CONDITION_EN = {
-    'neuf': 'New', 'occasion': 'Used', "d'occasion": 'Used', 'très bon état': 'Very good', 'bon état': 'Good'
+    'neuf': 'New', 'neuf avec étiquettes': 'New with tags', 'neuf sans étiquette': 'New without tags',
+    'neuf sans étiquettes': 'New without tags', 'neuf sans emballage': 'New without box', 'comme neuf': 'Like New',
+    'neuf (autre)': 'New (other)', 'neuf : autre (voir les détails)': 'New (other)', 'neuf autre (voir les détails)': 'New (other)',
+    'occasion': 'Used', "d'occasion": 'Used', 'très bon état': 'Very good', 'bon état': 'Good',
+    'état correct': 'Acceptable', 'satisfaisant': 'Acceptable', 'reconditionné': 'Refurbished',
+    'reconditionné par le fabricant': 'Manufacturer refurbished', 'reconditionné par le vendeur': 'Seller refurbished',
+    'reconditionné de façon professionnelle': 'Refurbished', 'pour pièces ou ne fonctionnant pas': 'For parts',
+    'pièces détachées': 'For parts'
 };
 function translateCondition(c) {
     if (!c) return 'See Listing';
     return CONDITION_EN[c.trim().toLowerCase()] || c;
 }
 
+function mapItem(item) {
+    const brand = detectBrand(item.title);
+    return {
+        bk:     brand.key,
+        bl:     brand.label,
+        title:  stripBrandFromTitle(item.title, brand.label),
+        price:  `${item.price?.currency || '€'} ${parseFloat(item.price?.value || 0).toFixed(2)}`,
+        type:   translateCondition(item.condition),
+        images: [item.image?.imageUrl, ...(item.additionalImages || []).map(x => x.imageUrl)].filter(Boolean),
+        desc:   item.shortDescription || '',
+        url:    item.itemWebUrl,
+        itemId: item.itemId,
+        sold:   item.sellingState === 'ENDED' || item.sold === true
+    };
+}
+
 async function fetchItems() {
     const res = await fetch('/api/ebay-listings');
     if (!res.ok) throw new Error('API error');
     const items = await res.json();
-    return items.map(item => {
-        const brand = detectBrand(item.title);
-        return {
-            bk:     brand.key,
-            bl:     brand.label,
-            title:  stripBrandFromTitle(item.title, brand.label),
-            price:  `${item.price?.currency || '€'} ${parseFloat(item.price?.value || 0).toFixed(2)}`,
-            type:   translateCondition(item.condition),
-            images: [item.image?.imageUrl, ...(item.additionalImages || []).map(x => x.imageUrl)].filter(Boolean),
-            desc:   item.shortDescription || '',
-            url:    item.itemWebUrl,
-            itemId: item.itemId,
-            sold:   item.sellingState === 'ENDED' || item.sold === true
-        };
-    });
+    const mapped = items.map(mapItem);
+    return [...mapped.filter(i => !i.sold), ...mapped.filter(i => i.sold)];
 }
 
 async function fetchFullItem(itemId) {
@@ -378,27 +477,45 @@ function renderGrid(items) {
     });
 }
 
+let currentFilter = 'all';
+
+function setFilter(f) {
+    currentFilter = f;
+    const bar = document.getElementById('filter-bar');
+    const select = document.getElementById('filter-select');
+    bar.querySelectorAll('.filter-tab').forEach(t => {
+        const active = t.dataset.f === f;
+        t.classList.toggle('active', active);
+        t.setAttribute('aria-selected', active);
+    });
+    if (select) select.value = f;
+    applyFilter(f);
+}
+
 function buildTabs(items) {
     const bar = document.getElementById('filter-bar');
+    const select = document.getElementById('filter-select');
     const map = new Map();
     items.forEach(it => { if (!map.has(it.bk)) map.set(it.bk,{label:it.bl,n:0}); map.get(it.bk).n++; });
     
-    // UPDATE 3: Sort alphabetically
     const sorted = [...map.entries()].sort((a,b) => {
         if (a[0]==='other') return 1;
         if (b[0]==='other') return -1;
         return a[1].label.localeCompare(b[1].label);
     });
     
-    bar.innerHTML = `<button class="filter-tab active" data-f="all" role="tab" aria-selected="true">All <span class="f-count">${items.length}</span></button>` + 
-        sorted.map(([k,v])=>`<button class="filter-tab" data-f="${k}" role="tab" aria-selected="false">${v.label} <span class="f-count">${v.n}</span></button>`).join('');
+    const options = [{ key:'all', label:'All', count:items.length }, ...sorted.map(([k,v])=>({ key:k, label:v.label, count:v.n }))];
     
-    bar.querySelectorAll('.filter-tab').forEach(tab => tab.addEventListener('click', () => {
-        bar.querySelectorAll('.filter-tab').forEach(t=>{ t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
-        tab.classList.add('active');
-        tab.setAttribute('aria-selected', 'true');
-        applyFilter(tab.dataset.f);
-    }));
+    bar.innerHTML = options.map(o =>
+        `<button class="filter-tab${o.key==='all'?' active':''}" data-f="${o.key}" role="tab" aria-selected="${o.key==='all'}">${o.label} <span class="f-count">${o.count}</span></button>`
+    ).join('');
+    
+    select.innerHTML = options.map(o =>
+        `<option value="${o.key}">${o.label} (${o.count})</option>`
+    ).join('');
+    
+    bar.querySelectorAll('.filter-tab').forEach(tab => tab.addEventListener('click', () => setFilter(tab.dataset.f)));
+    select.addEventListener('change', () => setFilter(select.value));
 }
 
 function applyFilter(f) {
@@ -412,72 +529,229 @@ function applyFilter(f) {
     }, 180);
 }
 
-/* GALLERY & ZOOM UPDATE 11 */
-let gIdx=0, gImgs=[];
-let isZoomed = false;
+/* GALLERY (modal preview) */
+let gIdx = 0, gImgs = [];
 const vp = document.getElementById('gallery-viewport');
 
-function resetZoom() {
-    isZoomed = false;
-    vp.classList.remove('zoomed');
-    document.querySelectorAll('.gallery-slide img').forEach(img => {
-        img.classList.remove('active-zoom');
-        img.style.transformOrigin = 'center';
-    });
-}
-
-vp.addEventListener('click', e => {
-    if (e.target.tagName === 'IMG') {
-        isZoomed = !isZoomed;
-        vp.classList.toggle('zoomed', isZoomed);
-        e.target.classList.toggle('active-zoom', isZoomed);
-        if(!isZoomed) e.target.style.transformOrigin = 'center';
-    }
-});
-
-vp.addEventListener('mousemove', e => {
-    if (!isZoomed) return;
-    const img = document.querySelector('.gallery-slide img.active-zoom');
-    if (!img) return;
-    const rect = vp.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    img.style.transformOrigin = `${x}% ${y}%`;
-});
-
-vp.addEventListener('mouseleave', resetZoom);
-
 function buildGallery(images) {
-    resetZoom();
-    gIdx=0; gImgs=images.length?images:[null];
-    const track=document.getElementById('gallery-track'), dots=document.getElementById('gallery-dots'), prev=document.getElementById('g-prev'), next=document.getElementById('g-next');
-    track.innerHTML = gImgs.map((src,i) => src ? `<div class="gallery-slide"><img src="${ebayImg(src, 1600)}" alt="Product Image ${i+1}" ${i===0?'fetchpriority="high"':'loading="lazy"'} decoding="async"></div>` : `<div class="gallery-slide"><div class="gallery-ph">${watchSVG(90)}</div></div>`).join('');
-    track.style.transform='translateX(0)';
-    if (gImgs.length>1) {
-        dots.innerHTML = gImgs.map((_,i)=>`<button class="gallery-dot ${i===0?'on':''}" data-i="${i}" aria-label="Image ${i+1}"></button>`).join('');
-        dots.querySelectorAll('.gallery-dot').forEach(d=>d.addEventListener('click',()=>goTo(+d.dataset.i)));
+    gIdx = 0; gImgs = images.length ? images : [null];
+    const track = document.getElementById('gallery-track');
+    const dots = document.getElementById('gallery-dots');
+    const prev = document.getElementById('g-prev');
+    const next = document.getElementById('g-next');
+    track.innerHTML = gImgs.map((src, i) => src
+        ? `<div class="gallery-slide"><img src="${ebayImg(src, 1600)}" alt="Product Image ${i + 1}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async"></div>`
+        : `<div class="gallery-slide"><div class="gallery-ph">${watchSVG(90)}</div></div>`
+    ).join('');
+    track.style.transform = 'translateX(0)';
+    if (gImgs.length > 1) {
+        dots.innerHTML = gImgs.map((_, i) => `<button class="gallery-dot ${i === 0 ? 'on' : ''}" data-i="${i}" aria-label="Image ${i + 1}"></button>`).join('');
+        dots.querySelectorAll('.gallery-dot').forEach(d => d.addEventListener('click', () => goTo(+d.dataset.i)));
         prev.classList.remove('hide'); next.classList.remove('hide');
-    } else { dots.innerHTML=''; prev.classList.add('hide'); next.classList.add('hide'); }
+    } else {
+        dots.innerHTML = ''; prev.classList.add('hide'); next.classList.add('hide');
+    }
 }
 
 function goTo(i) {
-    resetZoom();
-    gIdx=((i%gImgs.length)+gImgs.length)%gImgs.length;
-    document.getElementById('gallery-track').style.transform=`translateX(-${gIdx*100}%)`;
-    document.querySelectorAll('.gallery-dot').forEach((d,j)=>d.classList.toggle('on',j===gIdx));
+    if (!gImgs.length) return;
+    gIdx = ((i % gImgs.length) + gImgs.length) % gImgs.length;
+    document.getElementById('gallery-track').style.transform = `translateX(-${gIdx * 100}%)`;
+    document.querySelectorAll('.gallery-dot').forEach((d, j) => d.classList.toggle('on', j === gIdx));
+    if (lightbox.classList.contains('open')) lbGoTo(gIdx, false);
 }
-document.getElementById('g-prev').addEventListener('click',()=>goTo(gIdx-1));
-document.getElementById('g-next').addEventListener('click',()=>goTo(gIdx+1));
 
-/* Swipe */
+document.getElementById('g-prev').addEventListener('click', () => goTo(gIdx - 1));
+document.getElementById('g-next').addEventListener('click', () => goTo(gIdx + 1));
+
+vp.addEventListener('click', e => {
+    if (e.target.closest('.gallery-arrow') || !gImgs[gIdx]) return;
+    openLightbox(gIdx);
+});
+
 (function(){
-    let sx=0, sy=0, swiping=false;
-    vp.addEventListener('touchstart',e=>{ if(isZoomed)return; sx=e.touches[0].clientX; sy=e.touches[0].clientY; swiping=true; },{passive:true});
-    vp.addEventListener('touchend',e=>{
-        if(!swiping)return; swiping=false;
-        const dx=sx-e.changedTouches[0].clientX, dy=sy-e.changedTouches[0].clientY;
-        if(Math.abs(dx)>40 && Math.abs(dx)>Math.abs(dy)) goTo(gIdx+(dx>0?1:-1));
-    },{passive:true});
+    let sx = 0, sy = 0, swiping = false;
+    vp.addEventListener('touchstart', e => {
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY; swiping = true;
+    }, { passive: true });
+    vp.addEventListener('touchend', e => {
+        if (!swiping) return;
+        swiping = false;
+        const dx = sx - e.changedTouches[0].clientX;
+        const dy = sy - e.changedTouches[0].clientY;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) goTo(gIdx + (dx > 0 ? 1 : -1));
+        else if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && gImgs[gIdx]) openLightbox(gIdx);
+    }, { passive: true });
+})();
+
+/* FULL-PAGE LIGHTBOX */
+const lightbox = document.getElementById('lightbox');
+const lbViewport = document.getElementById('lightbox-viewport');
+const lbTrack = document.getElementById('lightbox-track');
+const lbLoupe = document.getElementById('lightbox-loupe');
+const lbLoupeImg = lbLoupe.querySelector('img');
+const lbCounter = document.getElementById('lightbox-counter');
+const LOUPE_ZOOM = 2.5;
+const touchMq = window.matchMedia('(max-width: 1024px)');
+
+let lbIdx = 0;
+let lbLoupeOn = false;
+
+function isTouchDevice() { return touchMq.matches; }
+
+function getLoupeSize() {
+    if (isTouchDevice()) {
+        const w = Math.min(Math.min(window.innerWidth, window.innerHeight) * 0.38, 168);
+        return { w, h: w * 0.75 };
+    }
+    return { w: 280, h: 210 };
+}
+
+function getLbImg(i) {
+    const slide = lbTrack.querySelectorAll('.lightbox-slide')[i ?? lbIdx];
+    return slide ? slide.querySelector('img') : null;
+}
+
+function hideLoupe() {
+    lbLoupeOn = false;
+    lbLoupe.classList.remove('visible');
+    lbViewport.classList.remove('loupe-on');
+}
+
+function updateLoupe(clientX, clientY) {
+    const img = getLbImg();
+    if (!img) return;
+    const imgRect = img.getBoundingClientRect();
+    if (clientX < imgRect.left || clientX > imgRect.right || clientY < imgRect.top || clientY > imgRect.bottom) {
+        lbLoupe.classList.remove('visible');
+        return;
+    }
+    const relX = (clientX - imgRect.left) / imgRect.width;
+    const relY = (clientY - imgRect.top) / imgRect.height;
+    const { w: lw, h: lh } = getLoupeSize();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let left = clientX - lw / 2;
+    let top = clientY - lh / 2;
+    left = Math.max(8, Math.min(left, vw - lw - 8));
+    top = Math.max(8, Math.min(top, vh - lh - 8));
+    lbLoupe.style.left = left + 'px';
+    lbLoupe.style.top = top + 'px';
+    lbLoupeImg.src = img.currentSrc || img.src;
+    lbLoupeImg.style.width = imgRect.width * LOUPE_ZOOM + 'px';
+    lbLoupeImg.style.height = imgRect.height * LOUPE_ZOOM + 'px';
+    lbLoupeImg.style.left = -(relX * imgRect.width * LOUPE_ZOOM - lw / 2) + 'px';
+    lbLoupeImg.style.top = -(relY * imgRect.height * LOUPE_ZOOM - lh / 2) + 'px';
+    lbLoupe.classList.add('visible');
+}
+
+function pointOnLbImg(clientX, clientY) {
+    const img = getLbImg();
+    if (!img) return false;
+    const r = img.getBoundingClientRect();
+    return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
+}
+
+function toggleLoupe(clientX, clientY) {
+    if (lbLoupeOn) {
+        hideLoupe();
+    } else if (pointOnLbImg(clientX, clientY)) {
+        lbLoupeOn = true;
+        lbViewport.classList.add('loupe-on');
+        updateLoupe(clientX, clientY);
+    }
+}
+
+function buildLightbox(startIdx) {
+    lbIdx = startIdx;
+    hideLoupe();
+    lbTrack.innerHTML = gImgs.map((src, i) => src
+        ? `<div class="lightbox-slide"><img src="${ebayImg(src, 1600)}" alt="Product Image ${i + 1}" decoding="async"></div>`
+        : `<div class="lightbox-slide"><div class="gallery-ph">${watchSVG(90)}</div></div>`
+    ).join('');
+    lbGoTo(lbIdx, false);
+    const multi = gImgs.filter(Boolean).length > 1;
+    document.getElementById('lb-prev').classList.toggle('hide', !multi);
+    document.getElementById('lb-next').classList.toggle('hide', !multi);
+    lbViewport.classList.add('loupe-zoom');
+}
+
+function lbGoTo(i, syncModal) {
+    if (!gImgs.length) return;
+    lbIdx = ((i % gImgs.length) + gImgs.length) % gImgs.length;
+    hideLoupe();
+    lbTrack.style.transform = `translateX(-${lbIdx * 100}%)`;
+    const total = gImgs.filter(Boolean).length;
+    lbCounter.textContent = total > 1 ? `${lbIdx + 1} / ${total}` : '';
+    if (syncModal !== false) {
+        gIdx = lbIdx;
+        document.getElementById('gallery-track').style.transform = `translateX(-${gIdx * 100}%)`;
+        document.querySelectorAll('.gallery-dot').forEach((d, j) => d.classList.toggle('on', j === gIdx));
+    }
+}
+
+function openLightbox(idx) {
+    if (!gImgs[idx]) return;
+    buildLightbox(idx);
+    lightbox.classList.add('open');
+}
+
+function closeLightbox() {
+    hideLoupe();
+    lightbox.classList.remove('open');
+}
+
+document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+document.getElementById('lb-prev').addEventListener('click', () => lbGoTo(lbIdx - 1));
+document.getElementById('lb-next').addEventListener('click', () => lbGoTo(lbIdx + 1));
+
+lbViewport.addEventListener('click', e => {
+    if (isTouchDevice() || e.target.tagName !== 'IMG') return;
+    toggleLoupe(e.clientX, e.clientY);
+});
+
+lbViewport.addEventListener('mousemove', e => {
+    if (!isTouchDevice() && lbLoupeOn) updateLoupe(e.clientX, e.clientY);
+});
+
+lbViewport.addEventListener('mouseleave', () => {
+    if (!isTouchDevice()) hideLoupe();
+});
+
+touchMq.addEventListener('change', hideLoupe);
+
+(function(){
+    let sx = 0, sy = 0, swiping = false;
+
+    lbViewport.addEventListener('touchstart', e => {
+        if (!isTouchDevice()) return;
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+        swiping = true;
+        if (lbLoupeOn) updateLoupe(sx, sy);
+    }, { passive: true });
+
+    lbViewport.addEventListener('touchmove', e => {
+        if (!isTouchDevice() || !swiping) return;
+        const cx = e.touches[0].clientX, cy = e.touches[0].clientY;
+        if (lbLoupeOn) updateLoupe(cx, cy);
+    }, { passive: true });
+
+    lbViewport.addEventListener('touchend', e => {
+        if (!isTouchDevice() || !swiping) return;
+        swiping = false;
+        const cx = e.changedTouches[0].clientX, cy = e.changedTouches[0].clientY;
+        const dx = sx - cx, dy = sy - cy;
+
+        if (lbLoupeOn) {
+            if (Math.abs(dx) < 12 && Math.abs(dy) < 12) hideLoupe();
+            return;
+        }
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+            lbGoTo(lbIdx + (dx > 0 ? 1 : -1));
+        } else if (Math.abs(dx) < 12 && Math.abs(dy) < 12) {
+            toggleLoupe(cx, cy);
+        }
+    }, { passive: true });
 })();
 
 const backdrop=document.getElementById('backdrop');
@@ -519,14 +793,20 @@ function openModal(idx) {
     }
 }
 
-function closeModal() { resetZoom(); backdrop.classList.remove('open'); document.body.style.overflow=''; }
-document.getElementById('modal-close').addEventListener('click',closeModal);
-backdrop.addEventListener('click',e=>{ if(e.target===backdrop) closeModal(); });
-document.addEventListener('keydown',e=>{
-    if(!backdrop.classList.contains('open'))return;
-    if(e.key==='Escape') closeModal();
-    if(e.key==='ArrowLeft') goTo(gIdx-1);
-    if(e.key==='ArrowRight') goTo(gIdx+1);
+function closeModal() { closeLightbox(); backdrop.classList.remove('open'); document.body.style.overflow = ''; }
+document.getElementById('modal-close').addEventListener('click', closeModal);
+backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+document.addEventListener('keydown', e => {
+    if (lightbox.classList.contains('open')) {
+        if (e.key === 'Escape') { if (lbLoupeOn) { hideLoupe(); return; } closeLightbox(); return; }
+        if (e.key === 'ArrowLeft') lbGoTo(lbIdx - 1);
+        if (e.key === 'ArrowRight') lbGoTo(lbIdx + 1);
+        return;
+    }
+    if (!backdrop.classList.contains('open')) return;
+    if (e.key === 'Escape') closeModal();
+    if (e.key === 'ArrowLeft') goTo(gIdx - 1);
+    if (e.key === 'ArrowRight') goTo(gIdx + 1);
 });
 
 /* MOBILE NAV */
