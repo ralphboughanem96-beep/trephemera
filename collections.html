@@ -115,7 +115,7 @@
             opacity:0; visibility:hidden; transition:opacity 0.3s,visibility 0.3s; }
         .backdrop.open { opacity:1; visibility:visible; }
 
-        .modal { width:100%; max-width:960px; max-height:88vh; background:var(--navy-mid); border:1px solid rgba(196,154,108,0.2);
+        .modal { width:100%; max-width:960px; height:88vh; background:var(--navy-mid); border:1px solid rgba(196,154,108,0.2);
             display:grid; grid-template-columns:1fr 1fr; position:relative; overflow:hidden; flex-shrink:0;
             opacity:0; transform:scale(0.97); transition:opacity 0.3s,transform 0.3s; }
         .backdrop.open .modal { opacity:1; transform:scale(1); }
@@ -129,7 +129,7 @@
         .gallery-viewport { position:relative; flex:1; overflow:hidden; min-height:300px; touch-action:pan-y; }
         .gallery-track { display:flex; height:100%; transition:transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
         .gallery-slide { flex:0 0 100%; height:100%; display:flex; align-items:center; justify-content:center; }
-        .gallery-slide img { width:100%; height:100%; object-fit:cover; }
+        .gallery-slide img { width:100%; height:100%; object-fit:contain; }
         .gallery-ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--navy),var(--navy-light)); }
         .gallery-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:5; width:36px; height:36px; background:rgba(10,21,32,0.7); border:1px solid rgba(196,154,108,0.3); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.2s; }
         .gallery-arrow:hover { background:rgba(196,154,108,0.15); }
@@ -142,7 +142,7 @@
         .gallery-dot.on { background:var(--rose-gold); transform:scale(1.25); }
 
         /* DETAILS — vertical scroll only, never horizontal */
-        .details-panel { padding:clamp(40px,3vw,44px) clamp(20px,3vw,38px) clamp(20px,3vw,32px); overflow-y:auto; overflow-x:hidden; touch-action:pan-y; display:flex; flex-direction:column; }
+        .details-panel { padding:clamp(40px,3vw,44px) clamp(20px,3vw,38px) clamp(20px,3vw,32px); overflow-y:auto; overflow-x:hidden; touch-action:pan-y; display:flex; flex-direction:column; min-height:0; }
         .details-panel::-webkit-scrollbar { width:3px; }
         .details-panel::-webkit-scrollbar-track { background:transparent; }
         .details-panel::-webkit-scrollbar-thumb { background:rgba(196,154,108,0.25); border-radius:2px; }
@@ -171,15 +171,15 @@
 
         /* RESPONSIVE — MODAL STACKS */
         @media (max-width:860px) {
-            .modal { grid-template-columns:1fr; max-height:90vh; grid-template-rows:auto 1fr; }
-            .gallery-panel { max-height:46vh; }
+            .modal { grid-template-columns:1fr; height:90vh; grid-template-rows:auto 1fr; }
+            .gallery-panel { height:44vh; }
             .gallery-viewport { min-height:200px; }
             .details-panel { min-height:0; }
         }
         @media (max-width:640px) {
             .nav-links { display:none; }
             .nav-toggle { display:flex; }
-            .gallery-panel { max-height:40vh; }
+            .gallery-panel { height:40vh; }
             .gallery-viewport { min-height:160px; }
             footer { flex-direction:column; text-align:center; }
         }
@@ -259,24 +259,66 @@
 const CFG = { seller: 'trephemera' };
 const EBAY_URL = `https://www.ebay.com/usr/${CFG.seller}`;
 
-/* BRAND DETECTION (for live eBay API) */
+/* IMAGE HELPER — upgrade eBay image URLs to higher resolution.
+   eBay serves the same image at many sizes via an "s-l###" token in the URL.
+   We rewrite that token (e.g. s-l225 -> s-l1600) to get full quality. */
+function ebayImg(url, size) {
+    if (!url) return url;
+    return url
+        .replace('/thumbs/images/', '/images/')
+        .replace(/s-l\d+(?=\.(jpg|jpeg|png|webp|avif)(\?|$))/i, 's-l' + size);
+}
+
+/* BRAND DETECTION — known brands first (handles multi-word names cleanly),
+   then a dynamic fallback that uses the leading word of the title as the brand,
+   so every brand eBay returns gets its own tab instead of a giant "Other". */
 const BRANDS = [
     { key:'rolex', label:'Rolex', terms:['rolex'] },
     { key:'patek-philippe', label:'Patek Philippe', terms:['patek philippe','patek'] },
     { key:'audemars-piguet', label:'Audemars Piguet', terms:['audemars piguet','audemars',' ap '] },
     { key:'vacheron-constantin', label:'Vacheron Constantin', terms:['vacheron constantin','vacheron'] },
     { key:'richard-mille', label:'Richard Mille', terms:['richard mille'] },
-    { key:'a-lange', label:'A. Lange & Sohne', terms:['lange & söhne','lange & sohne','a. lange','a lange'] },
-    { key:'iwc', label:'IWC Schaffhausen', terms:['iwc schaffhausen',' iwc '] },
-    { key:'jaeger-lecoultre', label:'Jaeger-LeCoultre', terms:['jaeger-lecoultre','jaeger lecoultre'] },
+    { key:'a-lange', label:'A. Lange & Söhne', terms:['lange & söhne','lange & sohne','a. lange','a lange'] },
+    { key:'iwc', label:'IWC Schaffhausen', terms:['iwc schaffhausen','iwc'] },
+    { key:'jaeger-lecoultre', label:'Jaeger-LeCoultre', terms:['jaeger-lecoultre','jaeger lecoultre','jaeger'] },
     { key:'breguet', label:'Breguet', terms:['breguet'] },
     { key:'omega', label:'Omega', terms:['omega'] },
     { key:'cartier', label:'Cartier', terms:['cartier'] },
     { key:'panerai', label:'Panerai', terms:['panerai'] },
     { key:'tudor', label:'Tudor', terms:['tudor'] },
     { key:'zenith', label:'Zenith', terms:['zenith'] },
+    { key:'tag-heuer', label:'TAG Heuer', terms:['tag heuer','tag-heuer','heuer'] },
+    { key:'breitling', label:'Breitling', terms:['breitling'] },
+    { key:'longines', label:'Longines', terms:['longines'] },
+    { key:'tissot', label:'Tissot', terms:['tissot'] },
+    { key:'hublot', label:'Hublot', terms:['hublot'] },
+    { key:'blancpain', label:'Blancpain', terms:['blancpain'] },
+    { key:'chopard', label:'Chopard', terms:['chopard'] },
+    { key:'bvlgari', label:'Bvlgari', terms:['bvlgari','bulgari'] },
+    { key:'montblanc', label:'Montblanc', terms:['montblanc','mont blanc'] },
+    { key:'hamilton', label:'Hamilton', terms:['hamilton'] },
+    { key:'oris', label:'Oris', terms:['oris'] },
+    { key:'seiko', label:'Seiko', terms:['grand seiko','seiko'] },
+    { key:'girard-perregaux', label:'Girard-Perregaux', terms:['girard-perregaux','girard perregaux'] },
+    { key:'ulysse-nardin', label:'Ulysse Nardin', terms:['ulysse nardin'] },
+    { key:'piaget', label:'Piaget', terms:['piaget'] },
+    { key:'glashutte', label:'Glashütte Original', terms:['glashütte','glashutte'] },
+    { key:'franck-muller', label:'Franck Muller', terms:['franck muller'] },
+    { key:'bell-ross', label:'Bell & Ross', terms:['bell & ross','bell and ross','bell ross'] },
+    { key:'hermes', label:'Hermès', terms:['hermès','hermes'] },
+    { key:'chanel', label:'Chanel', terms:['chanel'] },
 ];
-function detectBrand(t) { t=t.toLowerCase(); for (const b of BRANDS) if (b.terms.some(s=>t.includes(s))) return {key:b.key,label:b.label}; return {key:'other',label:'Other'}; }
+const STOPWORDS = new Set(['the','a','an','rare','vintage','original','genuine','authentic','official','new','old','antique','set','lot','watch','watches']);
+function slugify(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'other'; }
+function detectBrand(title) {
+    const t = (title || '').toLowerCase();
+    for (const b of BRANDS) if (b.terms.some(s => t.includes(s))) return { key:b.key, label:b.label };
+    // Dynamic fallback: first meaningful word of the title becomes the brand
+    const words = (title || '').replace(/[^A-Za-z0-9&.\- ]/g,' ').split(/\s+/).filter(Boolean);
+    const first = words.find(w => !STOPWORDS.has(w.toLowerCase())) || words[0] || 'Other';
+    const label = first.charAt(0).toUpperCase() + first.slice(1);
+    return { key: slugify(label), label };
+}
 
 /* PLACEHOLDER DATA — images:[] shows placeholder; add URLs for real photos */
 const DATA = [
@@ -337,7 +379,7 @@ function renderGrid(items) {
     const grid = document.getElementById('collection-grid');
     grid.innerHTML = items.map((it,i) => `
         <article class="item-card" data-brand="${it.bk}" data-idx="${i}" style="animation:fadeUp .4s ease ${(i*.03).toFixed(2)}s both" role="button" tabindex="0" aria-label="View details">
-            <div class="card-img-wrap">${it.images.length ? `<img src="${it.images[0]}" class="card-img" alt="${it.title}" loading="lazy">` : `<div class="card-placeholder">${watchSVG(60)}</div>`}<div class="card-cta">View Details</div></div>
+            <div class="card-img-wrap">${it.images.length ? `<img src="${ebayImg(it.images[0], 800)}" class="card-img" alt="${it.title}" loading="lazy">` : `<div class="card-placeholder">${watchSVG(60)}</div>`}<div class="card-cta">View Details</div></div>
             <div class="card-body">
                 <div class="card-brand">${it.bl}</div>
                 <div class="card-title">${it.title}</div>
@@ -356,7 +398,11 @@ function buildTabs(items) {
     const bar = document.getElementById('filter-bar');
     const map = new Map();
     items.forEach(it => { if (!map.has(it.bk)) map.set(it.bk,{label:it.bl,n:0}); map.get(it.bk).n++; });
-    const sorted = [...map.entries()].sort((a,b)=>b[1].n-a[1].n);
+    const sorted = [...map.entries()].sort((a,b)=>{
+        if (a[0]==='other') return 1;
+        if (b[0]==='other') return -1;
+        return b[1].n - a[1].n;
+    });
     bar.innerHTML = `<button class="filter-tab active" data-f="all">All <span class="f-count">${items.length}</span></button>` + sorted.map(([k,v])=>`<button class="filter-tab" data-f="${k}">${v.label} <span class="f-count">${v.n}</span></button>`).join('');
     bar.querySelectorAll('.filter-tab').forEach(tab => tab.addEventListener('click', () => {
         bar.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
@@ -392,7 +438,7 @@ let gIdx=0, gImgs=[];
 function buildGallery(images) {
     gIdx=0; gImgs=images.length?images:[null];
     const track=document.getElementById('gallery-track'), dots=document.getElementById('gallery-dots'), prev=document.getElementById('g-prev'), next=document.getElementById('g-next');
-    track.innerHTML = gImgs.map(src => src ? `<div class="gallery-slide"><img src="${src}" alt="" loading="lazy"></div>` : `<div class="gallery-slide"><div class="gallery-ph">${watchSVG(90)}</div></div>`).join('');
+    track.innerHTML = gImgs.map(src => src ? `<div class="gallery-slide"><img src="${ebayImg(src, 1600)}" alt="" loading="lazy"></div>` : `<div class="gallery-slide"><div class="gallery-ph">${watchSVG(90)}</div></div>`).join('');
     track.style.transform='translateX(0)';
     if (gImgs.length>1) {
         dots.innerHTML = gImgs.map((_,i)=>`<button class="gallery-dot ${i===0?'on':''}" data-i="${i}" aria-label="Image ${i+1}"></button>`).join('');
