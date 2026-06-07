@@ -19,12 +19,10 @@
         *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
         html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
         
-        /* UPDATE 1 & 5: Bigger font, uniformly using Cormorant Garamond */
         body { background:var(--navy); color:var(--cream); font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:400; line-height:1.6; overflow-x:hidden; }
         img { display:block; max-width:100%; }
         button { font-family:inherit; }
 
-        /* WCAG Focus states */
         :focus-visible { outline: 3px solid var(--rose-gold); outline-offset: 3px; border-radius: 2px; }
 
         body { animation: pageEnter 0.45s ease both; }
@@ -62,30 +60,24 @@
         .page-title { font-size:clamp(2.5rem,5vw,4.5rem); font-weight:400; letter-spacing:clamp(3px,1vw,8px); text-transform:uppercase; color:var(--cream); margin-bottom:10px; line-height:1.1; }
         .page-subtitle { font-size:1.05rem; letter-spacing:3px; text-transform:uppercase; color:var(--muted); }
 
-        /* FILTER BAR & GRID UPDATE 6: Cream Background */
+        /* FILTER BAR & GRID UPDATE: Dropdown system for desktop and mobile */
         .filter-section { background:var(--cream); border-bottom:1px solid rgba(0,0,0,0.1); position:sticky; top:var(--nav-h); z-index:100; padding:15px 0; }
         .filter-wrapper { position:relative; max-width:1400px; margin:0 auto; padding:0 var(--pad); }
         
-        /* UPDATE 7: Wrap filters naturally without scrolling */
-        .filter-bar { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; }
-        
-        .filter-tab { background:none; border:none; cursor:pointer; padding:6px 14px; border-radius:30px; display:inline-flex; align-items:center; gap:8px; font-family:inherit; font-size:1.05rem; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--navy); transition:background 0.25s,color 0.25s; }
-        .filter-tab:hover { background:rgba(0,0,0,0.05); }
-        .filter-tab.active { background:var(--navy); color:var(--cream); }
-        .f-count { font-size:0.9rem; padding:2px 8px; border-radius:20px; background:rgba(0,0,0,0.08); color:var(--navy); }
-        .filter-tab.active .f-count { background:rgba(255,255,255,0.2); color:var(--cream); }
+        .controls-bar { display:flex; gap:24px; justify-content:center; align-items:center; max-width:800px; margin:0 auto; flex-wrap:wrap; }
+        .control-group { display:flex; align-items:center; gap:12px; flex:1; min-width:260px; }
+        .control-label { font-size:0.95rem; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
 
-        .filter-select-wrap { display:none; }
         .filter-select {
             width:100%; padding:12px 16px; border:1px solid rgba(0,0,0,0.15); border-radius:6px;
             background:#fff; color:var(--navy); font-family:inherit; font-size:1.05rem; font-weight:600;
             letter-spacing:1px; text-transform:uppercase; cursor:pointer; appearance:none;
             background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%230a1520' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
             background-repeat:no-repeat; background-position:right 16px center; padding-right:40px;
+            transition: border-color 0.25s, box-shadow 0.25s;
         }
-        .filter-select:focus { outline:3px solid var(--rose-gold); outline-offset:2px; }
+        .filter-select:focus { outline:none; border-color:var(--rose-gold); box-shadow: 0 0 0 3px rgba(196,154,108,0.2); }
 
-        /* RESULTS & WRAP: Cream background updates */
         .results-bar { background:var(--cream); padding:20px var(--pad) 0; text-align:center; }
         .results-bar-inner { max-width:1400px; margin:0 auto; }
         .results-count { font-size:1rem; letter-spacing:2px; text-transform:uppercase; color:var(--navy); font-weight:600; }
@@ -106,7 +98,6 @@
         .card-img { width:100%; height:100%; object-fit:cover; transition:transform 0.5s; }
         .card-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#fff,var(--cream)); }
         
-        /* SOLD WATERMARK */
         .sold-badge { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) rotate(-15deg); font-size:1.8rem; font-weight:600; letter-spacing:5px; color:#d9534f; border:4px solid #d9534f; padding:8px 16px; z-index:10; background:rgba(255,255,255,0.85); text-transform:uppercase; pointer-events:none; }
 
         .card-cta { position:absolute; bottom:0; left:0; right:0; padding:11px 12px; text-align:center; background:rgba(10,21,32,0.9); font-size:0.95rem; letter-spacing:3px; text-transform:uppercase; color:var(--rose-gold); opacity:0; transform:translateY(4px); transition:opacity 0.3s,transform 0.3s; }
@@ -159,11 +150,9 @@
         .meta-val { font-size:1.4rem; font-weight:500; color:var(--cream); line-height:1; }
         .meta-val.price { color:var(--rose-gold); font-size:1.6rem; }
         
-        /* UPDATE 8: Remove justify */
         .desc-label { font-size:0.95rem; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
         .desc-body { font-size:clamp(1.15rem,1.5vw,1.3rem); line-height:1.8; color:var(--cream); opacity:0.85; text-align:left; margin-bottom:28px; }
         
-        /* UPDATE 9: Sticky CTA button inside modal */
         .modal-sticky-footer { position:sticky; bottom:0; left:0; right:0; background:var(--navy-mid); border-top:1px solid rgba(196,154,108,0.15); padding:20px clamp(30px,3vw,40px); z-index:10; }
         .buy-btn { display:flex; align-items:center; justify-content:center; gap:12px; width:100%; padding:16px 20px; background:var(--rose-gold); color:var(--navy); font-size:1.1rem; font-weight:600; letter-spacing:4px; text-transform:uppercase; text-decoration:none; border:none; cursor:pointer; transition:background 0.25s,letter-spacing 0.3s; }
         .buy-btn:hover { background:var(--rose-gold-lt); letter-spacing:5px; }
@@ -214,14 +203,13 @@
         }
         .zoom-loupe.visible { display:block; }
         .zoom-loupe img { position:absolute; max-width:none; object-fit:contain; }
-        /* New refined Sold Banner */
         .sold-banner {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(10, 21, 32, 0.85); /* Dark navy, matches site theme */
-            color: var(--rose-gold); /* Rose gold text, matches branding */
+            background: rgba(10, 21, 32, 0.85);
+            color: var(--rose-gold);
             font-size: 0.85rem;
             font-weight: 500;
             letter-spacing: 3px;
@@ -229,10 +217,23 @@
             padding: 8px 0;
             text-align: center;
             z-index: 10;
-            backdrop-filter: blur(4px); /* Adds a premium feel */
+            backdrop-filter: blur(4px);
         }
+        
         @media (max-width:1024px) {
             .zoom-loupe { width:min(38vmin, 168px); height:min(28.5vmin, 126px); }
+        }
+        @media (max-width:860px) {
+            .modal { grid-template-columns:1fr; height:90vh; grid-template-rows:auto 1fr; }
+            .gallery-panel { height:40vh; }
+            .gallery-viewport { min-height:200px; }
+        }
+        @media (max-width:640px) {
+            .nav-links { display:none; }
+            .nav-toggle { display:flex; }
+            footer { flex-direction:column; text-align:center; }
+            .controls-bar { flex-direction:column; gap:12px; }
+            .control-group { width:100%; min-width:100%; }
         }
 
         footer { background:var(--navy); border-top:1px solid rgba(196,154,108,0.1); padding:36px var(--pad); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
@@ -241,22 +242,6 @@
         .footer-links { display:flex; gap:24px; flex-wrap:wrap; }
         .footer-links a { font-size:1rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); text-decoration:none; transition:color 0.25s; }
         .footer-links a:hover { color:var(--rose-gold); }
-
-        @media (max-width:860px) {
-            .modal { grid-template-columns:1fr; height:90vh; grid-template-rows:auto 1fr; }
-            .gallery-panel { height:40vh; }
-            .gallery-viewport { min-height:200px; }
-        }
-        @media (max-width:1024px) {
-            .filter-bar { display:none; }
-            .filter-select-wrap { display:block; }
-            .filter-section { padding:10px 0; }
-        }
-        @media (max-width:640px) {
-            .nav-links { display:none; }
-            .nav-toggle { display:flex; }
-            footer { flex-direction:column; text-align:center; }
-        }
     </style>
 </head>
 <body>
@@ -292,9 +277,22 @@
 <main>
     <div class="filter-section">
         <div class="filter-wrapper">
-            <div class="filter-bar" id="filter-bar" role="tablist" aria-label="Brand filters"></div>
-            <div class="filter-select-wrap">
-                <select class="filter-select" id="filter-select" aria-label="Filter by brand"></select>
+            <div class="controls-bar">
+                <div class="control-group">
+                    <label for="filter-select" class="control-label">Brand</label>
+                    <select class="filter-select" id="filter-select" aria-label="Filter by brand"></select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="sort-select" class="control-label">Sort</label>
+                    <select class="filter-select" id="sort-select" aria-label="Sort items">
+                        <option value="default">Default Order</option>
+                        <option value="price-asc">Price: Low to High</option>
+                        <option value="price-desc">Price: High to Low</option>
+                        <option value="brand-asc">Brand: A to Z</option>
+                        <option value="title-asc">Title: A to Z</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
@@ -402,14 +400,12 @@ function detectBrand(title) {
     return { key: slugify(label), label };
 }
 
-/* UPDATE 10: Strip brand from title */
 function stripBrandFromTitle(title, brandLabel) {
     if (!title || !brandLabel) return title;
     const regex = new RegExp('^' + brandLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'i');
     return title.replace(regex, '');
 }
 
-/* DATA Mock: Injected `sold: true` for demo items */
 const DATA = [
   { bk:'rolex', bl:'Rolex', title:'Rolex Oyster Perpetual Datejust Vintage Catalogue 2018', price:'€85.00', type:'Vintage Catalogue', images:[], sold:false, desc:'An official Rolex technical catalogue...' },
   { bk:'rolex', bl:'Rolex', title:'Rolex Submariner 50th Anniversary Collector Brochure', price:'€140.00', type:'Collector Brochure', images:[], sold:true, desc:'Original Rolex collector brochure...' },
@@ -418,7 +414,6 @@ const DATA = [
 ];
 
 const CONDITION_EN = {
-    // --- French Translations ---
     'neuf': 'New', 
     'neuf avec étiquettes': 'New with tags', 
     'neuf sans étiquette': 'New without tags',
@@ -440,8 +435,6 @@ const CONDITION_EN = {
     'reconditionné de façon professionnelle': 'Refurbished', 
     'pour pièces ou ne fonctionnant pas': 'For parts',
     'pièces détachées': 'For parts',
-
-    // --- Dutch Translations ---
     'nieuw': 'New',
     'nieuw met labels': 'New with tags',
     'nieuw met prijskaartje': 'New with tags',
@@ -514,20 +507,24 @@ async function fetchFullItem(itemId) {
 function watchSVG(s) { s=s||64; return `<svg class="watch-icon" style="width:${s}px;height:${s}px" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="40" cy="40" r="24" stroke="#c49a6c" stroke-width="1"/><circle cx="40" cy="40" r="20" stroke="#c49a6c" stroke-width=".5"/><line x1="40" y1="20" x2="40" y2="25" stroke="#c49a6c" stroke-width="1.5"/><line x1="40" y1="55" x2="40" y2="60" stroke="#c49a6c" stroke-width="1.5"/><line x1="20" y1="40" x2="25" y2="40" stroke="#c49a6c" stroke-width="1.5"/><line x1="55" y1="40" x2="60" y2="40" stroke="#c49a6c" stroke-width="1.5"/><line x1="40" y1="40" x2="40" y2="27" stroke="#c49a6c" stroke-width="1.5" stroke-linecap="round"/><line x1="40" y1="40" x2="49" y2="45" stroke="#c49a6c" stroke-width="1" stroke-linecap="round"/><circle cx="40" cy="40" r="2" fill="#c49a6c"/><rect x="28" y="13" width="24" height="6" rx="1" stroke="#c49a6c" stroke-width=".5"/><rect x="28" y="61" width="24" height="6" rx="1" stroke="#c49a6c" stroke-width=".5"/></svg>`; }
 
 let ALL = [];
+let currentFilter = 'all';
+let currentSort = 'default';
+
+function parsePrice(priceStr) {
+    if (!priceStr) return 0;
+    return parseFloat(priceStr.replace(/[^0-9.-]+/g,"")) || 0;
+}
+
 function renderGrid(items) {
-    ALL = items;
     const grid = document.getElementById('collection-grid');
     grid.innerHTML = items.map((it, i) => {
-        // A refined, subtle banner for sold items
         const soldBanner = it.sold ? `<div class="sold-banner">Sold</div>` : '';
         const priceDisplay = it.sold ? '' : `<div class="card-price">${it.price}</div>`;
-
-        // Grayscale filter remains as requested
         const imgFilter = it.sold ? 'filter: grayscale(100%);' : '';
         const brandText = it.sold ? `${it.bl} | Sold` : it.bl;
 
         return `
-        <article class="item-card" data-brand="${it.bk}" data-idx="${i}" style="animation:fadeUp .4s ease ${Math.min(i*.03,.45).toFixed(2)}s both" role="button" tabindex="0" aria-label="View details for ${it.title}">
+        <article class="item-card" data-brand="${it.bk}" data-idx="${ALL.indexOf(it)}" style="animation:fadeUp .4s ease ${Math.min(i*.03,.45).toFixed(2)}s both" role="button" tabindex="0" aria-label="View details for ${it.title}">
             <div class="card-img-wrap">
                 ${soldBanner}
                 ${it.images.length ? `<img src="${ebayImg(it.images[0], 500)}" class="card-img" alt="${it.title}" style="${imgFilter}" loading="lazy" decoding="async">` : `<div class="card-placeholder">${watchSVG(60)}</div>`}
@@ -540,33 +537,47 @@ function renderGrid(items) {
             </div>
         </article>`;
     }).join('');
+    
     document.getElementById('visible-count').textContent = items.length;
+    
     grid.querySelectorAll('.item-card').forEach(c => {
         c.addEventListener('click', () => openModal(+c.dataset.idx));
         c.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); openModal(+c.dataset.idx); } });
     });
 }
 
-let currentFilter = 'all';
-
-function setFilter(f) {
-    currentFilter = f;
-    const bar = document.getElementById('filter-bar');
-    const select = document.getElementById('filter-select');
-    bar.querySelectorAll('.filter-tab').forEach(t => {
-        const active = t.dataset.f === f;
-        t.classList.toggle('active', active);
-        t.setAttribute('aria-selected', active);
-    });
-    if (select) select.value = f;
-    applyFilter(f);
+function updateView() {
+    const grid = document.getElementById('collection-grid');
+    grid.classList.add('filtering');
+    
+    setTimeout(() => {
+        let filteredItems = ALL.filter(it => currentFilter === 'all' || it.bk === currentFilter);
+        
+        filteredItems.sort((a, b) => {
+            if (a.sold !== b.sold) return a.sold ? 1 : -1;
+            
+            if (currentSort === 'price-asc') return parsePrice(a.price) - parsePrice(b.price);
+            if (currentSort === 'price-desc') return parsePrice(b.price) - parsePrice(a.price);
+            if (currentSort === 'brand-asc') return a.bl.localeCompare(b.bl);
+            if (currentSort === 'title-asc') return a.title.localeCompare(b.title);
+            
+            return 0; 
+        });
+        
+        renderGrid(filteredItems);
+        grid.classList.remove('filtering');
+    }, 180);
 }
 
-function buildTabs(items) {
-    const bar = document.getElementById('filter-bar');
+function buildDropdowns(items) {
     const select = document.getElementById('filter-select');
+    const sortSelect = document.getElementById('sort-select');
     const map = new Map();
-    items.forEach(it => { if (!map.has(it.bk)) map.set(it.bk,{label:it.bl,n:0}); map.get(it.bk).n++; });
+    
+    items.forEach(it => { 
+        if (!map.has(it.bk)) map.set(it.bk,{label:it.bl,n:0}); 
+        map.get(it.bk).n++; 
+    });
     
     const sorted = [...map.entries()].sort((a,b) => {
         if (a[0]==='other') return 1;
@@ -574,29 +585,21 @@ function buildTabs(items) {
         return a[1].label.localeCompare(b[1].label);
     });
     
-    const options = [{ key:'all', label:'All', count:items.length }, ...sorted.map(([k,v])=>({ key:k, label:v.label, count:v.n }))];
-    
-    bar.innerHTML = options.map(o =>
-        `<button class="filter-tab${o.key==='all'?' active':''}" data-f="${o.key}" role="tab" aria-selected="${o.key==='all'}">${o.label} <span class="f-count">${o.count}</span></button>`
-    ).join('');
+    const options = [{ key:'all', label:'All Brands', count:items.length }, ...sorted.map(([k,v])=>({ key:k, label:v.label, count:v.n }))];
     
     select.innerHTML = options.map(o =>
         `<option value="${o.key}">${o.label} (${o.count})</option>`
     ).join('');
     
-    bar.querySelectorAll('.filter-tab').forEach(tab => tab.addEventListener('click', () => setFilter(tab.dataset.f)));
-    select.addEventListener('change', () => setFilter(select.value));
-}
+    select.addEventListener('change', (e) => {
+        currentFilter = e.target.value;
+        updateView();
+    });
 
-function applyFilter(f) {
-    const grid = document.getElementById('collection-grid');
-    grid.classList.add('filtering');
-    setTimeout(() => {
-        let n=0;
-        document.querySelectorAll('.item-card').forEach(c => { const s=f==='all'||c.dataset.brand===f; c.style.display=s?'':'none'; if(s)n++; });
-        document.getElementById('visible-count').textContent = n;
-        grid.classList.remove('filtering');
-    }, 180);
+    sortSelect.addEventListener('change', (e) => {
+        currentSort = e.target.value;
+        updateView();
+    });
 }
 
 /* GALLERY (modal preview) */
@@ -831,7 +834,6 @@ function openModal(idx) {
     document.getElementById('modal-brand').textContent = it.bl;
     document.getElementById('modal-title').textContent = it.title;
     
-    // UPDATE 5: Sold condition display
     const priceEl = it.sold ? '<span class="meta-val" style="color:#d9534f;font-weight:700;">SOLD</span>' : `<span class="meta-val price">${it.price}</span>`;
 
     document.getElementById('modal-meta').innerHTML = `
@@ -841,7 +843,6 @@ function openModal(idx) {
     const loadingDesc = '<span style="color:var(--muted);font-style:italic;font-size:0.9em;">Loading description...</span>';
     document.getElementById('desc-body').innerHTML = it.desc || loadingDesc;
     
-    // UPDATE 9: Sticky Footer
     document.getElementById('modal-footer').innerHTML = it.sold 
         ? `<div style="text-align:center;color:var(--muted);font-size:1.1rem;letter-spacing:2px;text-transform:uppercase;">This item has been sold</div>`
         : `<a href="${it.url || EBAY_URL}" target="_blank" rel="noopener" class="buy-btn">View &amp; Buy on eBay <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>`;
@@ -899,15 +900,19 @@ mobileNav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
 /* INIT */
 fetchItems()
     .then(items => {
-        if (items.length > 0) { renderGrid(items); buildTabs(items); }
-        else { renderGrid(DATA); buildTabs(DATA); }
+        ALL = items.length > 0 ? items : DATA;
+        buildDropdowns(ALL);
+        updateView();
     })
-    .catch(() => { renderGrid(DATA); buildTabs(DATA); });
+    .catch(() => { 
+        ALL = DATA;
+        buildDropdowns(ALL);
+        updateView();
+    });
 </script>
 </body>
 </html>
 
-<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-1WTCQ3ZKZK"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
