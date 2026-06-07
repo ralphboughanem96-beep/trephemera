@@ -214,6 +214,23 @@
         }
         .zoom-loupe.visible { display:block; }
         .zoom-loupe img { position:absolute; max-width:none; object-fit:contain; }
+        /* New refined Sold Banner */
+        .sold-banner {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 21, 32, 0.85); /* Dark navy, matches site theme */
+            color: var(--rose-gold); /* Rose gold text, matches branding */
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            padding: 8px 0;
+            text-align: center;
+            z-index: 10;
+            backdrop-filter: blur(4px); /* Adds a premium feel */
+        }
         @media (max-width:1024px) {
             .zoom-loupe { width:min(38vmin, 168px); height:min(28.5vmin, 126px); }
         }
@@ -500,20 +517,20 @@ let ALL = [];
 function renderGrid(items) {
     ALL = items;
     const grid = document.getElementById('collection-grid');
-    grid.innerHTML = items.map((it,i) => {
-        // We removed the old "sold-badge" red watermark here.
+    grid.innerHTML = items.map((it, i) => {
+        // A refined, subtle banner for sold items
+        const soldBanner = it.sold ? `<div class="sold-banner">Sold</div>` : '';
         const priceDisplay = it.sold ? '' : `<div class="card-price">${it.price}</div>`;
 
-        // 1. Add a grayscale filter if the item is sold
+        // Grayscale filter remains as requested
         const imgFilter = it.sold ? 'filter: grayscale(100%);' : '';
-        
-        // 2. Append " | Sold" to the brand text if the item is sold
         const brandText = it.sold ? `${it.bl} | Sold` : it.bl;
 
         return `
         <article class="item-card" data-brand="${it.bk}" data-idx="${i}" style="animation:fadeUp .4s ease ${Math.min(i*.03,.45).toFixed(2)}s both" role="button" tabindex="0" aria-label="View details for ${it.title}">
             <div class="card-img-wrap">
-                ${it.images.length ? `<img src="${ebayImg(it.images[0], 500)}" srcset="${ebayImg(it.images[0],300)} 300w, ${ebayImg(it.images[0],500)} 500w, ${ebayImg(it.images[0],800)} 800w" sizes="(max-width:720px) 50vw, (max-width:1100px) 33vw, 25vw" class="card-img" alt="${it.title}" loading="lazy" decoding="async" style="${imgFilter}">` : `<div class="card-placeholder">${watchSVG(60)}</div>`}
+                ${soldBanner}
+                ${it.images.length ? `<img src="${ebayImg(it.images[0], 500)}" class="card-img" alt="${it.title}" style="${imgFilter}" loading="lazy" decoding="async">` : `<div class="card-placeholder">${watchSVG(60)}</div>`}
                 <div class="card-cta">View Details</div>
             </div>
             <div class="card-body">
