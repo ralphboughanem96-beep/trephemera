@@ -74,11 +74,11 @@ exports.handler = async (event) => {
                 body: JSON.stringify({ desc, images })
             };
         }
-
+        
         // Step 3: Fetch all seller listings
-        // THE FIX: Added 'q=watch OR brochure OR manual' to satisfy eBay's query requirement
+        const searchQuery = encodeURIComponent('watch OR brochure OR manual');
         const r = await fetch(
-            `https://api.ebay.com/buy/browse/v1/item_summary/search?q=watch OR brochure OR manual&filter=sellers:${SELLER}&limit=200`,
+            `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${searchQuery}&filter=sellers:{${SELLER}}&limit=200`,
             { headers: ebayHeaders }
         );
         const data = await r.json();
