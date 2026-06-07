@@ -5,7 +5,7 @@
     { "src": "api/ebay-auth.js", "use": "@vercel/node" },
     { "src": "*.html", "use": "@vercel/static" },
     { "src": "sitemap.xml", "use": "@vercel/static" },
-    { "src": "robots.txt", "use": "@vercel/static" }
+    { "src": "robots.txt", "use": "@vercel/static" },
     { "src": "BingSiteAuth.txt", "use": "@vercel/static" }
   ],
   "routes": [
