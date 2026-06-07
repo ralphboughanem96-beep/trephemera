@@ -1,6 +1,5 @@
 // Trephemera — eBay API Proxy
-// Credentials are stored safely as Netlify environment variables
-// Never exposed in the browser
+// Tries multiple marketplaces to find the seller's listings
 
 exports.handler = async (event) => {
     const APP_ID  = process.env.EBAY_APP_ID;
@@ -17,7 +16,7 @@ exports.handler = async (event) => {
     }
 
     try {
-        // Step 1: Get OAuth token from eBay
+        // Get OAuth token
         const creds = Buffer.from(`${APP_ID}:${CERT_ID}`).toString('base64');
         const tokenRes = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
             method: 'POST',
@@ -29,62 +28,54 @@ exports.handler = async (event) => {
         });
         const tokenData = await tokenRes.json();
         const token = tokenData.access_token;
+        if (!token) throw new Error('No access token: ' + JSON.stringify(tokenData));
 
-        if (!token) {
-            console.error('Token error:', tokenData);
-            throw new Error('Could not get eBay access token');
-        }
-
-        const ebayHeaders = {
-            'Authorization': `Bearer ${token}`,
-            'X-EBAY-C-MARKETPLACE-ID': 'EBAY_BE'
-        };
-
-        // Step 2: If itemId is provided, fetch full item details (description + all images)
+        // If fetching single item details
         const itemId = event.queryStringParameters && event.queryStringParameters.itemId;
         if (itemId) {
             const r = await fetch(
                 `https://api.ebay.com/buy/browse/v1/item/${encodeURIComponent(itemId)}`,
-                { headers: ebayHeaders }
+                { headers: { 'Authorization': `Bearer ${token}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_BE' } }
             );
             const item = await r.json();
             const images = [
                 item.image?.imageUrl,
                 ...(item.additionalImages || []).map(x => x.imageUrl)
             ].filter(Boolean);
-            // Strip HTML tags from eBay description
             const desc = (item.description || '')
                 .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
                 .replace(/<[^>]+>/g, ' ')
                 .replace(/\s+/g, ' ')
                 .trim();
-            return {
-                statusCode: 200,
-                headers,
-                body: JSON.stringify({ desc, images })
-            };
+            return { statusCode: 200, headers, body: JSON.stringify({ desc, images }) };
         }
 
-        // Step 3: Fetch all seller listings
-        const r = await fetch(
-            `https://api.ebay.com/buy/browse/v1/item_summary/search?filter=sellers:${SELLER}&limit=200`,
-            { headers: ebayHeaders }
-        );
-        const data = await r.json();
-        const items = data.itemSummaries || [];
+        // Try multiple marketplaces — return first one with results
+        const MARKETPLACES = ['EBAY_BE', 'EBAY_NL', 'EBAY_FR', 'EBAY_US', 'EBAY_GB', 'EBAY_DE'];
 
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify(items)
-        };
+        for (const marketplace of MARKETPLACES) {
+            const r = await fetch(
+                `https://api.ebay.com/buy/browse/v1/item_summary/search?filter=sellers:${SELLER}&limit=200`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'X-EBAY-C-MARKETPLACE-ID': marketplace
+                    }
+                }
+            );
+            const data = await r.json();
+            const items = data.itemSummaries || [];
+            if (items.length > 0) {
+                console.log(`Found ${items.length} items on ${marketplace}`);
+                return { statusCode: 200, headers, body: JSON.stringify(items) };
+            }
+        }
+
+        // Nothing found on any marketplace
+        return { statusCode: 200, headers, body: JSON.stringify([]) };
 
     } catch (err) {
         console.error('eBay function error:', err);
-        return {
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ error: err.message })
-        };
+        return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
     }
 };
