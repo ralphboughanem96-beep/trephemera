@@ -6,6 +6,7 @@
     { "src": "*.html", "use": "@vercel/static" },
     { "src": "sitemap.xml", "use": "@vercel/static" },
     { "src": "robots.txt", "use": "@vercel/static" }
+    { "src": "BingSiteAuth.txt", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/ebay-listings", "dest": "/api/ebay-listings.js" },
