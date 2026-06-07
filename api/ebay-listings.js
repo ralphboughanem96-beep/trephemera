@@ -1,90 +1,96 @@
-// Trephemera — eBay API Proxy
-// Credentials are stored safely as Netlify environment variables
-// Never exposed in the browser
+// Trephemera — eBay API Proxy (Vercel, raw Node response API for max compatibility)
+// Env vars: EBAY_APP_ID, EBAY_CERT_ID, EBAY_SELLER
 
-exports.handler = async (event) => {
+let cachedToken = null;
+let tokenExpiry  = 0;
+
+module.exports = async (req, res) => {
     const APP_ID  = process.env.EBAY_APP_ID;
     const CERT_ID = process.env.EBAY_CERT_ID;
     const SELLER  = process.env.EBAY_SELLER || 'trephemera';
 
-    const headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-    };
+    const LIST_CACHE = 'public, max-age=300, s-maxage=604800, stale-while-revalidate=86400';
 
-    if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 200, headers, body: '' };
+    // Raw response helper — uses only methods that always exist on the Node response
+    function send(status, cacheControl, payload) {
+        res.statusCode = status;
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Cache-Control', cacheControl);
+        res.end(JSON.stringify(payload));
+    }
+
+    if (req.method === 'OPTIONS') {
+        res.statusCode = 200;
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.end();
+        return;
+    }
+
+    async function getToken() {
+        if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
+        const creds = Buffer.from(`${APP_ID}:${CERT_ID}`).toString('base64');
+        const r = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
+            method: 'POST',
+            headers: { 'Authorization': `Basic ${creds}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope'
+        });
+        const d = await r.json();
+        if (!d.access_token) throw new Error('Could not get eBay access token');
+        cachedToken = d.access_token;
+        tokenExpiry = Date.now() + ((d.expires_in || 7200) - 60) * 1000;
+        return cachedToken;
     }
 
     try {
-        // Step 1: Get OAuth token from eBay
-        const creds = Buffer.from(`${APP_ID}:${CERT_ID}`).toString('base64');
-        const tokenRes = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Basic ${creds}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope'
-        });
-        const tokenData = await tokenRes.json();
-        const token = tokenData.access_token;
+        const token = await getToken();
+        const ebayHeaders = { 'Authorization': `Bearer ${token}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_BE' };
 
-        if (!token) {
-            console.error('Token error:', tokenData);
-            throw new Error('Could not get eBay access token');
-        }
+        // Parse itemId straight from the URL (no helper dependency)
+        const url = new URL(req.url, 'http://localhost');
+        const itemId = url.searchParams.get('itemId');
 
-        const ebayHeaders = {
-            'Authorization': `Bearer ${token}`,
-            'X-EBAY-C-MARKETPLACE-ID': 'EBAY_BE'
-        };
-
-        // Step 2: If itemId is provided, fetch full item details (description + all images)
-        const itemId = event.queryStringParameters && event.queryStringParameters.itemId;
+        // Single item detail (modal popup)
         if (itemId) {
             const r = await fetch(
                 `https://api.ebay.com/buy/browse/v1/item/${encodeURIComponent(itemId)}`,
                 { headers: ebayHeaders }
             );
             const item = await r.json();
+            if (item.errors) throw new Error(item.errors[0].message);
             const images = [
                 item.image?.imageUrl,
                 ...(item.additionalImages || []).map(x => x.imageUrl)
             ].filter(Boolean);
-            // Strip HTML tags from eBay description
             const desc = (item.description || '')
                 .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
                 .replace(/<[^>]+>/g, ' ')
                 .replace(/\s+/g, ' ')
                 .trim();
-            return {
-                statusCode: 200,
-                headers,
-                body: JSON.stringify({ desc, images })
-            };
+            send(200, LIST_CACHE, { desc, images });
+            return;
         }
 
-        // Step 3: Fetch all seller listings
-        const r = await fetch(
-            `https://api.ebay.com/buy/browse/v1/item_summary/search?filter=sellers:${SELLER}&limit=200`,
-            { headers: ebayHeaders }
-        );
-        const data = await r.json();
-        const items = data.itemSummaries || [];
+        // Full store: 3 categories, concurrent, deduplicated
+        const categories = ['281', '1', '371'];
+        const sellerFilter = `sellers:%7B${SELLER}%7D`;
+        const results = await Promise.all(categories.map(catId =>
+            fetch(
+                `https://api.ebay.com/buy/browse/v1/item_summary/search?category_ids=${catId}&filter=${sellerFilter}&limit=200`,
+                { headers: ebayHeaders }
+            ).then(r => r.json())
+        ));
 
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify(items)
-        };
+        const unique = new Map();
+        for (const data of results) {
+            if (data.itemSummaries) {
+                for (const item of data.itemSummaries) unique.set(item.itemId, item);
+            }
+        }
+
+        send(200, LIST_CACHE, Array.from(unique.values()));
 
     } catch (err) {
-        console.error('eBay function error:', err);
-        return {
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ error: err.message })
-        };
+        send(500, 'no-store', { error: err.message });
     }
 };
