@@ -1,9 +1,11 @@
-// Trephemera — eBay API Proxy v2 (debug)
+// Trephemera — eBay API Proxy v3
+// Uses Finding API for listing all seller items (no search query needed)
+// Uses Browse API only for individual item details (description + full images)
+
 exports.handler = async (event) => {
     const APP_ID  = process.env.EBAY_APP_ID;
     const CERT_ID = process.env.EBAY_CERT_ID;
     const SELLER  = process.env.EBAY_SELLER || 'trephemera';
-    const DEBUG   = event.queryStringParameters?.debug === '1';
 
     const headers = {
         'Access-Control-Allow-Origin': '*',
@@ -14,36 +16,30 @@ exports.handler = async (event) => {
         return { statusCode: 200, headers, body: '' };
     }
 
-    const log = [];
-
     try {
-        // Step 1: Get token
-        const creds = Buffer.from(`${APP_ID}:${CERT_ID}`).toString('base64');
-        const tokenRes = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Basic ${creds}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope'
-        });
-        const tokenData = await tokenRes.json();
-        const token = tokenData.access_token;
 
-        log.push({ step: 'token', success: !!token, error: token ? null : tokenData });
-        if (!token) {
-            return { statusCode: 500, headers, body: JSON.stringify({ version: 'v2', log }) };
-        }
-
-        // Step 2: If fetching single item
-        const itemId = event.queryStringParameters?.itemId;
+        // ── ITEM DETAIL (for modal: full description + images) ──────────────
+        const itemId = event.queryStringParameters && event.queryStringParameters.itemId;
         if (itemId) {
+            const creds = Buffer.from(`${APP_ID}:${CERT_ID}`).toString('base64');
+            const tokenRes = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Basic ${creds}`,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope'
+            });
+            const { access_token } = await tokenRes.json();
             const r = await fetch(
                 `https://api.ebay.com/buy/browse/v1/item/${encodeURIComponent(itemId)}`,
-                { headers: { 'Authorization': `Bearer ${token}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_BE' } }
+                { headers: { 'Authorization': `Bearer ${access_token}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_BE' } }
             );
             const item = await r.json();
-            const images = [item.image?.imageUrl, ...(item.additionalImages || []).map(x => x.imageUrl)].filter(Boolean);
+            const images = [
+                item.image?.imageUrl,
+                ...(item.additionalImages || []).map(x => x.imageUrl)
+            ].filter(Boolean);
             const desc = (item.description || '')
                 .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
                 .replace(/<[^>]+>/g, ' ')
@@ -51,39 +47,70 @@ exports.handler = async (event) => {
             return { statusCode: 200, headers, body: JSON.stringify({ desc, images }) };
         }
 
-        // Step 3: Try each marketplace
-        const MARKETPLACES = ['EBAY_BE', 'EBAY_NL', 'EBAY_FR', 'EBAY_US', 'EBAY_GB', 'EBAY_DE'];
+        // ── ALL SELLER LISTINGS via Finding API ──────────────────────────────
+        // Finding API does NOT require a search query — perfect for listing all seller items
+        // Try Belgium French first, then other sites
+        const GLOBAL_IDS = ['EBAY-FRBE', 'EBAY-NL', 'EBAY-FR', 'EBAY-US', 'EBAY-GB', 'EBAY-DE'];
 
-        for (const marketplace of MARKETPLACES) {
-            const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?filter=sellers:${SELLER}&limit=200`;
-            const r = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'X-EBAY-C-MARKETPLACE-ID': marketplace
-                }
-            });
+        for (const globalId of GLOBAL_IDS) {
+            const params = [
+                'OPERATION-NAME=findItemsAdvanced',
+                'SERVICE-VERSION=1.0.0',
+                `SECURITY-APPNAME=${encodeURIComponent(APP_ID)}`,
+                'RESPONSE-DATA-FORMAT=JSON',
+                `GLOBAL-ID=${globalId}`,
+                `itemFilter(0).name=Seller`,
+                `itemFilter(0).value=${encodeURIComponent(SELLER)}`,
+                'outputSelector(0)=PictureURLLarge',
+                'paginationInput.entriesPerPage=100',
+                'paginationInput.pageNumber=1'
+            ].join('&');
+
+            const r = await fetch(`https://svcs.ebay.com/services/search/FindingService/v1?${params}`);
             const data = await r.json();
-            const items = data.itemSummaries || [];
-            const count = items.length;
 
-            log.push({
-                marketplace,
-                itemCount: count,
-                total: data.total,
-                warnings: data.warnings,
-                error: data.errors || null
-            });
+            const response  = data.findItemsAdvancedResponse?.[0];
+            const rawItems  = response?.searchResult?.[0]?.item || [];
+            const total     = parseInt(response?.paginationOutput?.[0]?.totalEntries?.[0] || '0');
 
-            if (count > 0) {
-                if (DEBUG) return { statusCode: 200, headers, body: JSON.stringify({ version: 'v2', found: marketplace, count, log }) };
-                return { statusCode: 200, headers, body: JSON.stringify(items) };
+            if (rawItems.length === 0) continue;
+
+            // Fetch page 2 if more than 100 items
+            let allRaw = [...rawItems];
+            if (total > 100) {
+                const params2 = params.replace('pageNumber=1', 'pageNumber=2');
+                const r2 = await fetch(`https://svcs.ebay.com/services/search/FindingService/v1?${params2}`);
+                const data2 = await r2.json();
+                const page2 = data2.findItemsAdvancedResponse?.[0]?.searchResult?.[0]?.item || [];
+                allRaw = [...allRaw, ...page2];
             }
+
+            // Transform to the format collections.html expects
+            const items = allRaw.map(item => ({
+                itemId:           item.itemId?.[0],
+                title:            item.title?.[0] || '',
+                price: {
+                    value:    item.sellingStatus?.[0]?.currentPrice?.[0]?.['__value__'] || '0',
+                    currency: item.sellingStatus?.[0]?.currentPrice?.[0]?.['@currencyId'] || 'EUR'
+                },
+                itemWebUrl:       item.viewItemURL?.[0] || '',
+                image:            item.pictureURLLarge?.[0]
+                                    ? { imageUrl: item.pictureURLLarge[0] }
+                                    : item.galleryURL?.[0]
+                                        ? { imageUrl: item.galleryURL[0] }
+                                        : null,
+                condition:        item.condition?.[0]?.conditionDisplayName?.[0] || 'See Listing',
+                shortDescription: ''
+            }));
+
+            return { statusCode: 200, headers, body: JSON.stringify(items) };
         }
 
-        // Nothing found — return debug info always so we can diagnose
-        return { statusCode: 200, headers, body: JSON.stringify({ version: 'v2', found: 'none', seller: SELLER, log }) };
+        // Nothing found on any marketplace
+        return { statusCode: 200, headers, body: JSON.stringify([]) };
 
     } catch (err) {
-        return { statusCode: 500, headers, body: JSON.stringify({ version: 'v2', error: err.message, log }) };
+        console.error(err);
+        return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
     }
 };
