@@ -68,6 +68,28 @@
         
         /* UPDATE 7: Wrap filters naturally without scrolling */
         .filter-bar { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; }
+        .sort-select-wrap {
+            margin-top: 15px;
+            width: 100%;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        @media (min-width: 1024px) {
+            .filter-wrapper { display: flex; align-items: center; justify-content: space-between; }
+            .sort-select-wrap { margin-top: 0; width: 200px; }
+        }
+
+        <div class="filter-bar" id="filter-bar" role="tablist" aria-label="Brand filters"></div>
+
+        <div class="sort-select-wrap">
+            <select class="filter-select" id="sort-select" aria-label="Sort items">
+                <option value="newest">Newest Added</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+            </select>
+        </div>
         
         .filter-tab { background:none; border:none; cursor:pointer; padding:6px 14px; border-radius:30px; display:inline-flex; align-items:center; gap:8px; font-family:inherit; font-size:1.05rem; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--navy); transition:background 0.25s,color 0.25s; }
         .filter-tab:hover { background:rgba(0,0,0,0.05); }
@@ -895,6 +917,25 @@ mobileNav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
     mobileNav.setAttribute('aria-hidden', 'true');
     document.body.style.overflow=''; 
 }));
+
+function sortItems(items, criterion) {
+    return [...items].sort((a, b) => {
+        if (criterion === 'price-low') {
+            return parseFloat(a.price.replace(/[^\d.]/g, '')) - parseFloat(b.price.replace(/[^\d.]/g, ''));
+        }
+        if (criterion === 'price-high') {
+            return parseFloat(b.price.replace(/[^\d.]/g, '')) - parseFloat(a.price.replace(/[^\d.]/g, ''));
+        }
+        return 0; // Default: keep original order (newest)
+    });
+}
+
+// Update the listener for the dropdown
+document.getElementById('sort-select').addEventListener('change', (e) => {
+    const sorted = sortItems(ALL, e.target.value);
+    renderGrid(sorted); // Refresh grid with sorted items
+    applyFilter(currentFilter); // Re-apply the active brand filter
+});
 
 /* INIT */
 fetchItems()
