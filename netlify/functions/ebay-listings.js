@@ -1,19 +1,14 @@
 // Trephemera — eBay API Proxy
-// Credentials are stored safely as Netlify environment variables
-// Never exposed in the browser
-
 exports.handler = async (event) => {
     const APP_ID  = process.env.EBAY_APP_ID;
     const CERT_ID = process.env.EBAY_CERT_ID;
     const SELLER  = process.env.EBAY_SELLER || 'trephemera';
 
-    // THE FIX: Added Cache-Control headers to stop Netlify credit drain.
-    // 's-maxage=3600' caches the response on Netlify's CDN for 1 hour.
-    // Subsequent page loads cost 0 function invocations.
+    // UPDATED: 1-week cache (604,800 seconds) to completely minimize Netlify credit usage
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400'
+        'Cache-Control': 'public, max-age=300, s-maxage=604800, stale-while-revalidate=86400'
     };
 
     if (event.httpMethod === 'OPTIONS') {
@@ -35,17 +30,14 @@ exports.handler = async (event) => {
         const tokenData = await tokenRes.json();
         const token = tokenData.access_token;
 
-        if (!token) {
-            console.error('Token error:', tokenData);
-            throw new Error('Could not get eBay access token');
-        }
+        if (!token) throw new Error('Could not get eBay access token');
 
         const ebayHeaders = {
             'Authorization': `Bearer ${token}`,
             'X-EBAY-C-MARKETPLACE-ID': 'EBAY_BE'
         };
 
-        // Step 2: If itemId is provided, fetch full item details
+        // Step 2: Handle Single Item Details (for the modal popup)
         const itemId = event.queryStringParameters && event.queryStringParameters.itemId;
         if (itemId) {
             const r = await fetch(
@@ -53,8 +45,6 @@ exports.handler = async (event) => {
                 { headers: ebayHeaders }
             );
             const item = await r.json();
-            
-            // Catch eBay specific API errors
             if (item.errors) throw new Error(item.errors[0].message);
 
             const images = [
@@ -68,30 +58,40 @@ exports.handler = async (event) => {
                 .replace(/\s+/g, ' ')
                 .trim();
                 
-            return {
-                statusCode: 200,
-                headers,
-                body: JSON.stringify({ desc, images })
-            };
+            return { statusCode: 200, headers, body: JSON.stringify({ desc, images }) };
         }
-        
-        // Step 3: Fetch all seller listings
-        const searchQuery = encodeURIComponent('watch OR brochure OR manual');
-        const r = await fetch(
-            `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${searchQuery}&filter=sellers:{${SELLER}}&limit=200`,
-            { headers: ebayHeaders }
+
+        // Step 3: Fetch the full store using the 3 main categories concurrently
+        const categories = ['281', '1', '371'];
+        const encodedSellerFilter = `sellers:%7B${SELLER}%7D`; 
+
+        const fetchPromises = categories.map(catId => 
+            fetch(
+                `https://api.ebay.com/buy/browse/v1/item_summary/search?category_ids=${catId}&filter=${encodedSellerFilter}&limit=200`,
+                { headers: ebayHeaders }
+            ).then(res => res.json())
         );
-        const data = await r.json();
 
-        // Catch eBay specific API errors instead of passing empty data silently
-        if (data.errors) throw new Error(data.errors[0].message);
+        // Wait for all 3 category requests to finish
+        const results = await Promise.all(fetchPromises);
 
-        const items = data.itemSummaries || [];
+        // Combine and deduplicate the items using a Map
+        const uniqueItemsMap = new Map();
+        for (const data of results) {
+            if (data.itemSummaries) {
+                for (const item of data.itemSummaries) {
+                    uniqueItemsMap.set(item.itemId, item);
+                }
+            }
+        }
+
+        // Convert the Map back into an array to send to your website
+        const finalItems = Array.from(uniqueItemsMap.values());
 
         return {
             statusCode: 200,
             headers,
-            body: JSON.stringify(items)
+            body: JSON.stringify(finalItems)
         };
 
     } catch (err) {
