@@ -3,10 +3,7 @@
   "builds": [
     { "src": "api/ebay-listings.js", "use": "@vercel/node" },
     { "src": "api/ebay-auth.js", "use": "@vercel/node" },
-    { "src": "*.html", "use": "@vercel/static" },
-    { "src": "sitemap.xml", "use": "@vercel/static" },
-    { "src": "robots.txt", "use": "@vercel/static" },
-    { "src": "BingSiteAuth.xml", "use": "@vercel/static" }
+    { "src": "*.{html,xml,txt}", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/ebay-listings", "dest": "/api/ebay-listings.js" },
