@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trephemera - Horology & Stories</title>
+    <meta name="description" content="The essential stop for watch collectors. Rare vintage brochures, instruction manuals, catalogues and collector ephemera from Rolex, Patek Philippe, Audemars Piguet, Vacheron Constantin, Richard Mille and more.">
+    <meta name="keywords" content="vintage watches, horology, watch ephemera, rare watch brochures, instruction manuals, Rolex catalogue, Patek Philippe, Audemars Piguet, Vacheron Constantin, Richard Mille, watch collector">
+    <meta property="og:title" content="Trephemera - Horology & Stories">
+    <meta property="og:description" content="The essential stop for every watch collector. Rare vintage brochures, catalogues and ephemera.">
+    <meta property="og:url" content="https://trephemera.com">
+    <meta property="og:type" content="website">
+    <link rel="canonical" href="https://trephemera.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://i.ebayimg.com" crossorigin>
+    <link rel="dns-prefetch" href="https://i.ebayimg.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy:#0a1520; --navy-mid:#0f1e2e; --navy-light:#162536;
+            --rose-gold:#c49a6c; --rose-gold-lt:#d4b896; --cream:#f0e6d8; --muted:#8a9bb0;
+            --pad:clamp(20px,4.5vw,60px); --nav-h:62px;
+        }
+        *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+        body { background:var(--navy); color:var(--cream); font-family:'Jost',sans-serif; font-weight:300; overflow-x:hidden; }
+        img { display:block; max-width:100%; }
+        button { font-family:inherit; }
+
+        /* PAGE TRANSITION — opacity only, never transform (keeps position:fixed working) */
+        body { animation: pageEnter 0.45s ease both; }
+        @keyframes pageEnter { from { opacity:0; } to { opacity:1; } }
+        body.page-exit { animation: pageExit 0.3s ease forwards; }
+        @keyframes pageExit { to { opacity:0; } }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+
+        /* NAV */
+        nav { position:fixed; top:0; left:0; right:0; height:var(--nav-h); z-index:200; padding:0 var(--pad);
+            display:flex; justify-content:space-between; align-items:center;
+            background:rgba(10,21,32,0.97); border-bottom:1px solid rgba(196,154,108,0.12); backdrop-filter:blur(12px); }
+        .nav-logo { font-family:'Cormorant Garamond',serif; font-size:clamp(1.1rem,2vw,1.4rem); font-weight:500; letter-spacing:5px; color:var(--rose-gold); text-decoration:none; text-transform:uppercase; }
+        .nav-links { display:flex; gap:clamp(20px,3vw,40px); list-style:none; align-items:center; }
+        .nav-links a { color:var(--cream); text-decoration:none; font-size:0.7rem; letter-spacing:2px; text-transform:uppercase; opacity:0.65; transition:opacity 0.25s,color 0.25s; }
+        .nav-links a:hover { opacity:1; color:var(--rose-gold); }
+        .nav-cta { color:var(--rose-gold)!important; opacity:1!important; border:1px solid rgba(196,154,108,0.4); padding:7px 20px; transition:background 0.25s!important; }
+        .nav-cta:hover { background:rgba(196,154,108,0.1); border-color:var(--rose-gold)!important; }
+        .nav-toggle { display:none; flex-direction:column; justify-content:center; gap:5px; width:32px; height:32px; background:none; border:none; cursor:pointer; }
+        .nav-toggle span { display:block; width:22px; height:1px; background:var(--rose-gold); transition:transform 0.3s,opacity 0.3s; }
+        .nav-toggle.open span:nth-child(1) { transform:translateY(6px) rotate(45deg); }
+        .nav-toggle.open span:nth-child(2) { opacity:0; }
+        .nav-toggle.open span:nth-child(3) { transform:translateY(-6px) rotate(-45deg); }
+
+        /* MOBILE NAV */
+        .mobile-nav { position:fixed; top:var(--nav-h); left:0; right:0; bottom:0; z-index:150;
+            background:var(--navy); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:30px;
+            opacity:0; visibility:hidden; transition:opacity 0.3s,visibility 0.3s; }
+        .mobile-nav.open { opacity:1; visibility:visible; }
+        .mobile-nav a { color:var(--cream); text-decoration:none; font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:300; letter-spacing:4px; text-transform:uppercase; transition:color 0.25s; }
+        .mobile-nav a:hover { color:var(--rose-gold); }
+        .mobile-nav-rule { width:40px; height:1px; background:rgba(196,154,108,0.3); }
+
+        /* HERO */
+        .hero { min-height:100vh; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; padding:calc(var(--nav-h) + 40px) var(--pad) 80px; }
+        .hero-bg { position:absolute; inset:0; background:radial-gradient(ellipse at 30% 50%,rgba(196,154,108,0.08) 0%,transparent 60%),var(--navy); }
+        .hero-ornament { position:absolute; width:clamp(280px,60vw,600px); height:clamp(280px,60vw,600px); border:1px solid rgba(196,154,108,0.06); border-radius:50%; top:50%; left:50%; transform:translate(-50%,-50%); animation:rotate 60s linear infinite; }
+        .hero-ornament::before { content:''; position:absolute; inset:20px; border:1px solid rgba(196,154,108,0.04); border-radius:50%; }
+        .hero-ornament::after { content:''; position:absolute; inset:-20px; border:1px solid rgba(196,154,108,0.03); border-radius:50%; }
+        @keyframes rotate { to { transform:translate(-50%,-50%) rotate(360deg); } }
+        .hero-content { position:relative; text-align:center; max-width:800px; }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:none; } }
+        .hero-eyebrow { font-size:0.62rem; letter-spacing:5px; text-transform:uppercase; color:var(--rose-gold); margin-bottom:24px; opacity:0; animation:fadeInUp 1s ease 0.3s both; }
+        .hero-title { font-family:'Cormorant Garamond',serif; font-size:clamp(3rem,8vw,7rem); font-weight:300; letter-spacing:clamp(4px,1.5vw,8px); text-transform:uppercase; color:var(--cream); line-height:1; margin-bottom:10px; opacity:0; animation:fadeInUp 1s ease 0.5s both; }
+        .hero-subtitle { font-family:'Cormorant Garamond',serif; font-size:clamp(0.9rem,2.5vw,1.4rem); font-weight:300; font-style:italic; color:var(--rose-gold-lt); letter-spacing:3px; margin-bottom:40px; opacity:0; animation:fadeInUp 1s ease 0.7s both; }
+        .hero-tagline { font-size:0.65rem; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:50px; opacity:0; animation:fadeInUp 1s ease 0.9s both; }
+        .hero-divider { width:1px; height:60px; background:linear-gradient(to bottom,var(--rose-gold),transparent); margin:0 auto 30px; opacity:0; animation:fadeInUp 1s ease 1.1s both; }
+        .hero-btn { display:inline-block; font-size:0.62rem; letter-spacing:4px; text-transform:uppercase; color:var(--rose-gold); text-decoration:none; border:1px solid rgba(196,154,108,0.5); padding:14px 42px; transition:background 0.3s,border-color 0.3s,letter-spacing 0.3s; opacity:0; animation:fadeInUp 1s ease 1.2s both; }
+        .hero-btn:hover { background:rgba(196,154,108,0.1); border-color:var(--rose-gold); letter-spacing:5px; }
+
+        /* ESSENTIAL */
+        .essential-section { padding:clamp(60px,8vw,100px) var(--pad); background:var(--navy); }
+        .essential-inner { max-width:1100px; margin:0 auto; text-align:center; }
+        .essential-eyebrow { font-size:0.6rem; letter-spacing:5px; text-transform:uppercase; color:var(--rose-gold); margin-bottom:20px; }
+        .essential-title { font-family:'Cormorant Garamond',serif; font-size:clamp(1.8rem,4vw,3.2rem); font-weight:300; letter-spacing:2px; color:var(--cream); line-height:1.3; margin-bottom:20px; }
+        .essential-title em { font-style:italic; color:var(--rose-gold-lt); }
+        .essential-sub { font-family:'Cormorant Garamond',serif; font-size:clamp(1rem,1.8vw,1.2rem); color:var(--cream); opacity:0.65; line-height:1.8; max-width:700px; margin:0 auto 60px; text-align:justify; }
+        .essential-pillars { display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(20px,3vw,50px); max-width:900px; margin:0 auto; }
+        .pillar { padding:clamp(24px,3vw,36px) clamp(16px,2vw,28px); border:1px solid rgba(196,154,108,0.12); position:relative; transition:border-color 0.3s; }
+        .pillar:hover { border-color:rgba(196,154,108,0.3); }
+        .pillar::before { content:''; position:absolute; top:-1px; left:50%; transform:translateX(-50%); width:30px; height:1px; background:var(--rose-gold); }
+        .pillar-icon { font-size:1.4rem; margin-bottom:16px; display:block; }
+        .pillar-title { font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:400; color:var(--cream); letter-spacing:2px; margin-bottom:10px; }
+        .pillar-text { font-size:0.68rem; letter-spacing:1px; color:var(--muted); line-height:1.8; }
+
+        /* SECTIONS */
+        section { padding:clamp(60px,8vw,100px) var(--pad); }
+        .section-header { text-align:center; margin-bottom:70px; }
+        .section-eyebrow { font-size:0.6rem; letter-spacing:5px; text-transform:uppercase; color:var(--rose-gold); margin-bottom:16px; }
+        .section-title { font-family:'Cormorant Garamond',serif; font-size:clamp(2rem,4vw,3.5rem); font-weight:300; letter-spacing:4px; color:var(--cream); text-transform:uppercase; }
+        .section-rule { width:60px; height:1px; background:var(--rose-gold); margin:24px auto 0; opacity:0.5; }
+
+        /* LISTINGS */
+        #listings { background:var(--navy-mid); }
+        .listings-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:2px; max-width:1400px; margin:0 auto; }
+        .listing-card { background:var(--navy-light); overflow:hidden; position:relative; cursor:pointer; display:flex; flex-direction:column; transition:transform 0.35s; text-decoration:none; color:inherit; }
+        .listing-card:hover { transform:scale(1.015); z-index:2; }
+        .listing-card:hover .listing-cta { opacity:1; transform:translateY(0); }
+        .listing-card:hover .listing-img { transform:scale(1.05); }
+        .listing-img-wrap { aspect-ratio:1; overflow:hidden; background:var(--navy); flex-shrink:0; position:relative; }
+        .listing-img { width:100%; height:100%; object-fit:cover; transition:transform 0.5s; }
+        .listing-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--navy),var(--navy-light)); }
+        .listing-cta { position:absolute; bottom:0; left:0; right:0; padding:11px; text-align:center; background:rgba(10,21,32,0.82); font-size:0.58rem; letter-spacing:3px; text-transform:uppercase; color:var(--rose-gold); border-top:1px solid rgba(196,154,108,0.25); opacity:0; transform:translateY(4px); transition:opacity 0.3s,transform 0.3s; }
+        .listing-body { padding:16px 18px 18px; border-top:1px solid rgba(196,154,108,0.08); display:flex; flex-direction:column; flex:1; }
+        .listing-brand { font-size:0.52rem; letter-spacing:3px; text-transform:uppercase; color:var(--rose-gold); margin-bottom:6px; }
+        .listing-title { font-family:'Cormorant Garamond',serif; font-size:0.95rem; font-weight:400; color:var(--cream); line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; flex:1; margin-bottom:12px; }
+        .listing-foot { display:flex; flex-direction:column; gap:4px; margin-top:auto; }
+        .listing-price { font-size:0.85rem; color:var(--rose-gold); }
+        .listing-meta { font-size:0.52rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); }
+        .view-all-wrap { text-align:center; margin-top:60px; }
+        .view-all-btn { display:inline-block; font-size:0.62rem; letter-spacing:4px; text-transform:uppercase; color:var(--rose-gold); text-decoration:none; border:1px solid rgba(196,154,108,0.4); padding:14px 42px; transition:background 0.3s,letter-spacing 0.3s; }
+        .view-all-btn:hover { background:rgba(196,154,108,0.1); letter-spacing:5px; }
+
+        /* ABOUT */
+        #about { background:var(--navy); }
+        .about-inner { max-width:1200px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:clamp(40px,6vw,100px); align-items:center; }
+        .about-text .section-header { text-align:left; margin-bottom:30px; }
+        .about-text .section-rule { margin:24px 0 0; }
+        .about-body { font-family:'Cormorant Garamond',serif; font-size:1.1rem; line-height:1.9; color:var(--cream); opacity:0.85; margin-top:30px; text-align:justify; }
+        .about-body p + p { margin-top:18px; }
+        .about-signature { margin-top:40px; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.5rem; color:var(--rose-gold); }
+        .about-frame { border:1px solid rgba(196,154,108,0.2); padding:clamp(24px,3vw,40px); position:relative; }
+        .about-frame::before { content:''; position:absolute; top:-10px; left:-10px; width:50px; height:50px; border-top:1px solid var(--rose-gold); border-left:1px solid var(--rose-gold); }
+        .about-frame::after { content:''; position:absolute; bottom:-10px; right:-10px; width:50px; height:50px; border-bottom:1px solid var(--rose-gold); border-right:1px solid var(--rose-gold); }
+        .about-brands { display:flex; flex-direction:column; gap:12px; }
+        .about-brand-item { display:flex; align-items:center; gap:16px; padding:12px 18px; border:1px solid rgba(196,154,108,0.1); font-family:'Cormorant Garamond',serif; font-size:0.95rem; letter-spacing:2px; color:var(--cream); opacity:0.8; transition:opacity 0.3s,border-color 0.3s; }
+        .about-brand-item:hover { opacity:1; border-color:rgba(196,154,108,0.3); }
+        .about-brand-dot { width:4px; height:4px; background:var(--rose-gold); border-radius:50%; flex-shrink:0; }
+
+        /* CONTACT */
+        #contact { background:var(--navy-mid); text-align:center; }
+        .contact-inner { max-width:600px; margin:0 auto; }
+        .contact-body { font-family:'Cormorant Garamond',serif; font-size:1.2rem; line-height:1.8; color:var(--cream); opacity:0.8; margin-bottom:50px; }
+        .contact-email { display:block; font-family:'Cormorant Garamond',serif; font-size:clamp(1.1rem,2.5vw,1.5rem); color:var(--rose-gold); text-decoration:none; letter-spacing:2px; margin-bottom:40px; transition:opacity 0.3s; }
+        .contact-email:hover { opacity:0.7; }
+        .contact-ebay { display:inline-block; font-size:0.62rem; letter-spacing:4px; text-transform:uppercase; color:var(--cream); text-decoration:none; border:1px solid rgba(240,230,216,0.3); padding:14px 42px; transition:background 0.3s,border-color 0.3s; }
+        .contact-ebay:hover { border-color:var(--cream); background:rgba(240,230,216,0.05); }
+
+        /* FOOTER */
+        footer { background:var(--navy); border-top:1px solid rgba(196,154,108,0.1); padding:36px var(--pad); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
+        .footer-logo { font-family:'Cormorant Garamond',serif; font-size:1rem; letter-spacing:4px; color:var(--rose-gold); text-transform:uppercase; }
+        .footer-copy { font-size:0.58rem; letter-spacing:2px; color:var(--muted); text-transform:uppercase; }
+        .footer-links { display:flex; gap:24px; flex-wrap:wrap; }
+        .footer-links a { font-size:0.58rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); text-decoration:none; transition:color 0.25s; }
+        .footer-links a:hover { color:var(--rose-gold); }
+
+        /* REVEAL */
+        .reveal { opacity:0; transform:translateY(20px); transition:opacity 0.8s ease,transform 0.8s ease; }
+        .reveal.visible { opacity:1; transform:none; }
+        .watch-icon { width:64px; height:64px; opacity:0.17; }
+
+        /* RESPONSIVE */
+        @media (max-width:900px) {
+            .nav-links { display:none; }
+            .nav-toggle { display:flex; }
+            .about-inner { grid-template-columns:1fr; }
+            .essential-pillars { grid-template-columns:1fr; max-width:380px; }
+            footer { flex-direction:column; text-align:center; }
+        }
+        @media (max-width:600px) {
+            .listings-grid { grid-template-columns:1fr 1fr; gap:1px; }
+            .hero-ornament { width:260px; height:260px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="index.html" class="nav-logo">Trephemera</a>
+    <ul class="nav-links">
+        <li><a href="collections.html">Collection</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact" class="nav-cta">Contact</a></li>
+    </ul>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="mobile-nav" id="mobile-nav">
+    <a href="collections.html">Collection</a>
+    <div class="mobile-nav-rule"></div>
+    <a href="#about">About</a>
+    <div class="mobile-nav-rule"></div>
+    <a href="#contact">Contact</a>
+</div>
+
+<section class="hero" id="home">
+    <div class="hero-bg"></div>
+    <div class="hero-ornament"></div>
+    <div class="hero-content">
+        <p class="hero-eyebrow">Brussels, Belgium</p>
+        <h1 class="hero-title">Trephemera</h1>
+        <p class="hero-subtitle">Horology & Stories</p>
+        <p class="hero-tagline">Rare Brochures, Vintage Catalogues & Collector Ephemera</p>
+        <div class="hero-divider"></div>
+        <a href="collections.html" class="hero-btn">Explore the Collection</a>
+    </div>
+</section>
+
+<div class="essential-section reveal">
+    <div class="essential-inner">
+        <p class="essential-eyebrow">Why Trephemera</p>
+        <h2 class="essential-title">The <em>Essential Stop</em> for Every Watch Collector</h2>
+        <p class="essential-sub">Whether you are building your archive, completing your reference library, or hunting for that one piece you have been searching for years: Trephemera is where serious collectors come. Every item is genuine, every description honest, and every find carefully sourced by collectors who understand what matters.</p>
+        <div class="essential-pillars">
+            <div class="pillar"><span class="pillar-icon">✦</span><div class="pillar-title">Genuine & Rare</div><p class="pillar-text">Every piece authenticated and sourced directly. No bulk lots, no reproductions, no shortcuts.</p></div>
+            <div class="pillar"><span class="pillar-icon">◈</span><div class="pillar-title">Collector Curated</div><p class="pillar-text">Selected by collectors, for collectors. We only list what we believe in and would keep ourselves.</p></div>
+            <div class="pillar"><span class="pillar-icon">⊕</span><div class="pillar-title">Ships Worldwide</div><p class="pillar-text">From Brussels to every corner of the world. Every item carefully packed and fully insured.</p></div>
+        </div>
+    </div>
+</div>
+
+<section id="listings">
+    <div class="section-header reveal">
+        <p class="section-eyebrow">Recently Added</p>
+        <h2 class="section-title">Featured Pieces</h2>
+        <div class="section-rule"></div>
+    </div>
+    <div id="listings-container" class="listings-grid"></div>
+    <div class="view-all-wrap reveal">
+        <a href="collections.html" class="view-all-btn">Browse Full Collection</a>
+    </div>
+</section>
+
+<section id="about">
+    <div class="about-inner">
+        <div class="about-text reveal">
+            <div class="section-header">
+                <p class="section-eyebrow">Our Story</p>
+                <h2 class="section-title">Tracy & Ralph</h2>
+                <div class="section-rule"></div>
+            </div>
+            <div class="about-body">
+                <p>Welcome to our little corner of horological history. We are private collectors who turned a lifelong passion for fine watchmaking into a curated selection of rare and hard-to-find ephemera: vintage brochures, instruction manuals, catalogues, collector pieces and rare documentation from the world's most prestigious brands.</p>
+                <p>Every item we list is genuine, carefully sourced, and described with honesty. No bulk lots, no fakes, no shortcuts.</p>
+                <p>We are just getting started. In 2027 we will be expanding into vintage and modern watch parts, accessories, and beyond. If you are a collector who appreciates the stories behind the watches as much as the watches themselves, you are in the right place.</p>
+                <p>Questions? Always feel free to reach out. Tell us what you are looking for, we might just have it.</p>
+            </div>
+            <div class="about-signature">Tracy & Ralph</div>
+        </div>
+        <div class="about-visual reveal">
+            <div class="about-frame">
+                <div class="about-brands">
+                    <div class="about-brand-item"><span class="about-brand-dot"></span>Rolex</div>
+                    <div class="about-brand-item"><span class="about-brand-dot"></span>Patek Philippe</div>
+                    <div class="about-brand-item"><span class="about-brand-dot"></span>Audemars Piguet</div>
+                    <div class="about-brand-item"><span class="about-brand-dot"></span>Vacheron Constantin</div>
+                    <div class="about-brand-item"><span class="about-brand-dot"></span>Richard Mille</div>
+                    <div class="about-brand-item"><span class="about-brand-dot"></span>And Many More</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="contact">
+    <div class="contact-inner reveal">
+        <div class="section-header">
+            <p class="section-eyebrow">Get In Touch</p>
+            <h2 class="section-title">Contact</h2>
+            <div class="section-rule"></div>
+        </div>
+        <p class="contact-body">Questions about a piece? Looking for something specific?<br>We love hearing from fellow collectors and enthusiasts.</p>
+        <a href="mailto:ralph@trephemera.com" class="contact-email">ralph@trephemera.com</a>
+        <a href="https://www.ebay.com/usr/trephemera" target="_blank" class="contact-ebay">Visit Our eBay Store</a>
+    </div>
+</section>
+
+<footer>
+    <div class="footer-logo">Trephemera</div>
+    <p class="footer-copy">© 2026 Trephemera · Brussels, Belgium</p>
+    <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="collections.html">Collection</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+    </div>
+</footer>
+
+<script>
+'use strict';
+
+/* MOBILE NAV */
+const toggle = document.getElementById('nav-toggle');
+const mobileNav = document.getElementById('mobile-nav');
+toggle.addEventListener('click', () => {
+    const open = mobileNav.classList.toggle('open');
+    toggle.classList.toggle('open', open);
+    document.body.style.overflow = open ? 'hidden' : '';
+});
+mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    mobileNav.classList.remove('open');
+    toggle.classList.remove('open');
+    document.body.style.overflow = '';
+}));
+
+/* PAGE TRANSITIONS (opacity only) */
+document.querySelectorAll('a[href]').forEach(a => {
+    const href = a.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('mailto') || href.startsWith('http')) return;
+    a.addEventListener('click', e => {
+        e.preventDefault();
+        document.body.classList.add('page-exit');
+        setTimeout(() => { window.location.href = href; }, 300);
+    });
+});
+
+/* IMAGE HELPER — rewrite eBay image URLs to a chosen resolution */
+function ebayImg(url, size) {
+    if (!url) return url;
+    return url
+        .replace('/thumbs/images/', '/images/')
+        .replace(/s-l\d+(?=\.(jpg|jpeg|png|webp|avif)(\?|$))/i, 's-l' + size);
+}
+
+/* WATCH SVG */
+function watchSVG() {
+    return `<svg class="watch-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="24" stroke="#c49a6c" stroke-width="1"/><circle cx="40" cy="40" r="20" stroke="#c49a6c" stroke-width=".5"/><line x1="40" y1="20" x2="40" y2="25" stroke="#c49a6c" stroke-width="1.5"/><line x1="40" y1="55" x2="40" y2="60" stroke="#c49a6c" stroke-width="1.5"/><line x1="20" y1="40" x2="25" y2="40" stroke="#c49a6c" stroke-width="1.5"/><line x1="55" y1="40" x2="60" y2="40" stroke="#c49a6c" stroke-width="1.5"/><line x1="40" y1="40" x2="40" y2="27" stroke="#c49a6c" stroke-width="1.5" stroke-linecap="round"/><line x1="40" y1="40" x2="49" y2="45" stroke="#c49a6c" stroke-width="1" stroke-linecap="round"/><circle cx="40" cy="40" r="2" fill="#c49a6c"/><rect x="28" y="13" width="24" height="6" rx="1" stroke="#c49a6c" stroke-width=".5"/><rect x="28" y="61" width="24" height="6" rx="1" stroke="#c49a6c" stroke-width=".5"/></svg>`;
+}
+
+/* FEATURED — live API with placeholder fallback */
+function renderFeatured(items) {
+    document.getElementById('listings-container').innerHTML = items.map((p,i) => `
+        <a href="collections.html" class="listing-card" style="animation:fadeUp .4s ease ${Math.min(i*.06,.35).toFixed(2)}s both">
+            <div class="listing-img-wrap">
+                ${p.image ? `<img src="${ebayImg(p.image,600)}" srcset="${ebayImg(p.image,400)} 400w, ${ebayImg(p.image,600)} 600w, ${ebayImg(p.image,900)} 900w" sizes="(max-width:720px) 90vw, (max-width:1100px) 45vw, 30vw" alt="${p.title}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">` : `<div class="listing-placeholder">${watchSVG()}</div>`}
+                <div class="listing-cta">View Details</div>
+            </div>
+            <div class="listing-body">
+                <div class="listing-brand">${p.brand}</div>
+                <div class="listing-title">${p.title}</div>
+                <div class="listing-foot"><div class="listing-price">${p.price}</div><div class="listing-meta">${p.meta}</div></div>
+            </div>
+        </a>`).join('');
+}
+function loadFeatured() {
+    fetch('/.netlify/functions/ebay-listings')
+        .then(r => r.json())
+        .then(items => {
+            if (!items || !items.length) throw new Error('empty');
+            renderFeatured(items.slice(0,6).map(item => ({
+                brand: item.title.split(' ')[0],
+                title: item.title,
+                price: `${item.price?.currency||'€'} ${parseFloat(item.price?.value||0).toFixed(2)}`,
+                meta:  item.condition || 'See Listing',
+                image: item.image?.imageUrl || null
+            })));
+        })
+        .catch(() => renderFeatured([
+            { brand:'Rolex',              title:'Rolex Submariner 50th Anniversary Collector Brochure',           price:'€140.00', meta:'Collector Brochure', image:null },
+            { brand:'Patek Philippe',      title:'Patek Philippe Annual Collection Vintage Catalogue 2020',        price:'€120.00', meta:'Vintage Catalogue',  image:null },
+            { brand:'Audemars Piguet',     title:'AP Royal Oak 50th Anniversary Rare Documentation',              price:'€95.00',  meta:'Rare Ephemera',      image:null },
+            { brand:'Vacheron Constantin', title:'Vacheron Constantin Overseas Vintage Catalogue',                price:'€75.00',  meta:'Vintage Catalogue',  image:null },
+            { brand:'Richard Mille',       title:'Richard Mille RM 035 Original Instruction Manual',             price:'€110.00', meta:'Instruction Manual', image:null },
+            { brand:'A. Lange & Sohne',    title:'A. Lange & Sohne Lange 1 25th Anniversary Collector Brochure', price:'€130.00', meta:'Collector Brochure', image:null },
+        ]));
+}
+loadFeatured();
+
+/* REVEAL */
+const obs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }), { threshold:0.08 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
