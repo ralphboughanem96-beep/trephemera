@@ -19,12 +19,10 @@
         *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
         html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
         
-        /* UPDATE 1 & 5: Bigger font, uniformly using Cormorant Garamond */
         body { background:var(--navy); color:var(--cream); font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:400; line-height:1.6; overflow-x:hidden; }
         img { display:block; max-width:100%; }
         button { font-family:inherit; }
 
-        /* WCAG 2.1/2.2 Focus states */
         :focus-visible { outline: 3px solid var(--rose-gold); outline-offset: 3px; border-radius: 2px; }
 
         body { animation: pageEnter 0.45s ease both; }
@@ -33,7 +31,6 @@
         @keyframes pageExit { to { opacity:0; } }
         @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
 
-        /* NAV */
         nav { position:fixed; top:0; left:0; right:0; height:var(--nav-h); z-index:200; padding:0 var(--pad);
             display:flex; justify-content:space-between; align-items:center;
             background:rgba(10,21,32,0.97); border-bottom:1px solid rgba(196,154,108,0.12); backdrop-filter:blur(12px); }
@@ -49,7 +46,6 @@
         .nav-toggle.open span:nth-child(2) { opacity:0; }
         .nav-toggle.open span:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
 
-        /* MOBILE NAV */
         .mobile-nav { position:fixed; top:var(--nav-h); left:0; right:0; bottom:0; z-index:150;
             background:var(--navy); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:30px;
             opacity:0; visibility:hidden; transition:opacity 0.3s,visibility 0.3s; }
@@ -58,7 +54,6 @@
         .mobile-nav a:hover { color:var(--rose-gold); }
         .mobile-nav-rule { width:40px; height:1px; background:rgba(196,154,108,0.3); }
 
-        /* HERO - UPDATE 2: Added watch gear pattern */
         .hero { min-height:100vh; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; padding:calc(var(--nav-h) + 40px) var(--pad) 80px; }
         .hero-bg { 
             position:absolute; inset:0; 
@@ -81,7 +76,6 @@
         .hero-btn { display:inline-block; font-size:1rem; letter-spacing:4px; text-transform:uppercase; color:var(--rose-gold); text-decoration:none; border:1px solid rgba(196,154,108,0.5); padding:14px 42px; transition:background 0.3s,border-color 0.3s,letter-spacing 0.3s; opacity:0; animation:fadeInUp 1s ease 1.2s both; }
         .hero-btn:hover { background:rgba(196,154,108,0.1); border-color:var(--rose-gold); letter-spacing:5px; }
 
-        /* ESSENTIAL */
         .essential-section { padding:clamp(60px,8vw,100px) var(--pad); background:var(--navy); }
         .essential-inner { max-width:1100px; margin:0 auto; text-align:center; }
         .essential-eyebrow { font-size:1rem; letter-spacing:5px; text-transform:uppercase; color:var(--rose-gold); margin-bottom:20px; }
@@ -102,7 +96,6 @@
         .section-title { font-size:clamp(2.2rem,4vw,3.8rem); font-weight:400; letter-spacing:4px; color:var(--cream); text-transform:uppercase; }
         .section-rule { width:60px; height:1px; background:var(--rose-gold); margin:24px auto 0; opacity:0.5; }
 
-        /* LISTINGS - UPDATE 6: Cream Background & Navy Text */
         #listings { background:var(--cream); color:var(--navy); }
         #listings .section-eyebrow { color:var(--rose-gold-dark); font-weight:600; }
         #listings .section-title { color:var(--navy); font-weight:600; }
@@ -116,7 +109,6 @@
         .listing-img { width:100%; height:100%; object-fit:cover; transition:transform 0.5s; }
         .listing-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#fff,var(--cream)); }
         
-        /* SOLD WATERMARK */
         .sold-badge { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) rotate(-15deg); font-size:2rem; font-weight:600; letter-spacing:6px; color:#d9534f; border:4px solid #d9534f; padding:10px 20px; z-index:10; background:rgba(255,255,255,0.85); text-transform:uppercase; pointer-events:none; }
 
         .listing-cta { position:absolute; bottom:0; left:0; right:0; padding:11px; text-align:center; background:rgba(10,21,32,0.9); font-size:1rem; letter-spacing:3px; text-transform:uppercase; color:var(--rose-gold); opacity:0; transform:translateY(4px); transition:opacity 0.3s,transform 0.3s; }
@@ -130,23 +122,14 @@
         .view-all-btn { display:inline-block; font-size:1rem; font-weight:600; letter-spacing:4px; text-transform:uppercase; color:var(--navy); text-decoration:none; border:1px solid var(--navy); padding:14px 42px; transition:background 0.3s,color 0.3s,letter-spacing 0.3s; }
         .view-all-btn:hover { background:var(--navy); color:var(--cream); letter-spacing:5px; }
 
-        /* ABOUT */
         #about { background:var(--navy); }
-        .about-inner { max-width:1200px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:clamp(40px,6vw,100px); align-items:center; }
-        .about-text .section-header { text-align:left; margin-bottom:30px; }
-        .about-text .section-rule { margin:24px 0 0; }
-        .about-body { font-size:1.25rem; line-height:1.9; color:var(--cream); opacity:0.9; margin-top:30px; text-align:justify; }
+        .about-inner { max-width:800px; margin:0 auto; text-align:center; }
+        .about-text .section-header { text-align:center; margin-bottom:30px; }
+        .about-text .section-rule { margin:24px auto 0; }
+        .about-body { font-size:1.25rem; line-height:1.9; color:var(--cream); opacity:0.9; margin-top:30px; }
         .about-body p + p { margin-top:18px; }
         .about-signature { margin-top:40px; font-style:italic; font-size:1.8rem; color:var(--rose-gold); }
-        .about-frame { border:1px solid rgba(196,154,108,0.2); padding:clamp(24px,3vw,40px); position:relative; }
-        .about-frame::before { content:''; position:absolute; top:-10px; left:-10px; width:50px; height:50px; border-top:1px solid var(--rose-gold); border-left:1px solid var(--rose-gold); }
-        .about-frame::after { content:''; position:absolute; bottom:-10px; right:-10px; width:50px; height:50px; border-bottom:1px solid var(--rose-gold); border-right:1px solid var(--rose-gold); }
-        .about-brands { display:flex; flex-direction:column; gap:12px; }
-        .about-brand-item { display:flex; align-items:center; gap:16px; padding:12px 18px; border:1px solid rgba(196,154,108,0.1); font-size:1.2rem; letter-spacing:2px; color:var(--cream); opacity:0.8; transition:opacity 0.3s,border-color 0.3s; }
-        .about-brand-item:hover { opacity:1; border-color:rgba(196,154,108,0.3); }
-        .about-brand-dot { width:4px; height:4px; background:var(--rose-gold); border-radius:50%; flex-shrink:0; }
 
-        /* CONTACT - UPDATE 6: Cream Background & Navy Text, WhatsApp */
         #contact { background:var(--cream); color:var(--navy); text-align:center; }
         #contact .section-eyebrow { color:var(--rose-gold-dark); font-weight:600; }
         #contact .section-title { color:var(--navy); font-weight:600; }
@@ -154,9 +137,10 @@
         .contact-inner { max-width:600px; margin:0 auto; }
         .contact-body { font-size:1.3rem; line-height:1.8; margin-bottom:40px; }
         .contact-links { display:flex; flex-direction:column; gap:20px; align-items:center; margin-bottom:40px; }
-        .contact-email { font-size:clamp(1.3rem,2.5vw,1.8rem); font-weight:600; color:var(--rose-gold-dark); text-decoration:none; letter-spacing:2px; transition:opacity 0.3s; }
-        .contact-whatsapp { font-size:1.4rem; font-weight:600; color:#25D366; text-decoration:none; letter-spacing:1px; transition:opacity 0.3s; display:flex; align-items:center; gap:10px; justify-content:center; }
+        
+        .contact-email, .contact-whatsapp { font-size:clamp(1.3rem,2.5vw,1.8rem); font-weight:600; color:var(--rose-gold-dark); text-decoration:none; letter-spacing:2px; transition:opacity 0.3s; display:flex; align-items:center; gap:10px; justify-content:center; }
         .contact-email:hover, .contact-whatsapp:hover { opacity:0.7; }
+        
         .contact-ebay { display:inline-block; font-size:1rem; font-weight:600; letter-spacing:4px; text-transform:uppercase; color:var(--navy); text-decoration:none; border:1px solid var(--navy); padding:14px 42px; transition:background 0.3s,color 0.3s; }
         .contact-ebay:hover { background:var(--navy); color:var(--cream); }
 
@@ -174,7 +158,6 @@
         @media (max-width:900px) {
             .nav-links { display:none; }
             .nav-toggle { display:flex; }
-            .about-inner { grid-template-columns:1fr; }
             .essential-pillars { grid-template-columns:1fr; max-width:380px; }
             footer { flex-direction:column; text-align:center; }
         }
@@ -258,18 +241,6 @@
                 </div>
                 <div class="about-signature">Tracy & Ralph</div>
             </div>
-            <div class="about-visual reveal">
-                <div class="about-frame">
-                    <div class="about-brands">
-                        <div class="about-brand-item"><span class="about-brand-dot"></span>Rolex</div>
-                        <div class="about-brand-item"><span class="about-brand-dot"></span>Patek Philippe</div>
-                        <div class="about-brand-item"><span class="about-brand-dot"></span>Audemars Piguet</div>
-                        <div class="about-brand-item"><span class="about-brand-dot"></span>Vacheron Constantin</div>
-                        <div class="about-brand-item"><span class="about-brand-dot"></span>Richard Mille</div>
-                        <div class="about-brand-item"><span class="about-brand-dot"></span>And Many More</div>
-                    </div>
-                </div>
-            </div>
         </div>
     </section>
 
@@ -307,7 +278,6 @@
 <script>
 'use strict';
 
-/* MOBILE NAV */
 const toggle = document.getElementById('nav-toggle');
 const mobileNav = document.getElementById('mobile-nav');
 toggle.addEventListener('click', () => {
@@ -325,7 +295,6 @@ mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
     document.body.style.overflow = '';
 }));
 
-/* PAGE TRANSITIONS */
 document.querySelectorAll('a[href]').forEach(a => {
     const href = a.getAttribute('href');
     if (!href || href.startsWith('#') || href.startsWith('mailto') || href.startsWith('http')) return;
@@ -345,7 +314,6 @@ function watchSVG() {
     return `<svg class="watch-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="40" cy="40" r="24" stroke="#c49a6c" stroke-width="1"/><circle cx="40" cy="40" r="20" stroke="#c49a6c" stroke-width=".5"/><line x1="40" y1="20" x2="40" y2="25" stroke="#c49a6c" stroke-width="1.5"/><line x1="40" y1="55" x2="40" y2="60" stroke="#c49a6c" stroke-width="1.5"/><line x1="20" y1="40" x2="25" y2="40" stroke="#c49a6c" stroke-width="1.5"/><line x1="55" y1="40" x2="60" y2="40" stroke="#c49a6c" stroke-width="1.5"/><line x1="40" y1="40" x2="40" y2="27" stroke="#c49a6c" stroke-width="1.5" stroke-linecap="round"/><line x1="40" y1="40" x2="49" y2="45" stroke="#c49a6c" stroke-width="1" stroke-linecap="round"/><circle cx="40" cy="40" r="2" fill="#c49a6c"/><rect x="28" y="13" width="24" height="6" rx="1" stroke="#c49a6c" stroke-width=".5"/><rect x="28" y="61" width="24" height="6" rx="1" stroke="#c49a6c" stroke-width=".5"/></svg>`;
 }
 
-/* UPDATE 4: Condition translation applied to index.html */
 const CONDITION_EN = {
     'neuf': 'New', 'neuf avec étiquettes': 'New with tags', 'neuf sans étiquette': 'New without tags',
     'neuf sans étiquettes': 'New without tags', 'neuf sans emballage': 'New without box', 'comme neuf': 'Like New',
@@ -361,7 +329,6 @@ function translateCondition(c) {
     return CONDITION_EN[c.trim().toLowerCase()] || c;
 }
 
-/* UPDATE 10: Strip Brand Name from Title */
 function stripBrandFromTitle(title, brandLabel) {
     if (!title || !brandLabel) return title;
     const regex = new RegExp('^' + brandLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'i');
@@ -370,7 +337,6 @@ function stripBrandFromTitle(title, brandLabel) {
 
 function renderFeatured(items) {
     document.getElementById('listings-container').innerHTML = items.map((p,i) => {
-        // UPDATE 5: Display "Sold" watermark
         const watermark = p.sold ? `<div class="sold-badge">Sold</div>` : '';
         const priceDisplay = p.sold ? '' : `<div class="listing-price">${p.price}</div>`;
 
