@@ -704,6 +704,20 @@ function renderGrid(items) {
     });
 }
 
+/* ── Load descriptions for row view (parallel, fire-and-forget) ── */
+function loadRowDescs(items) {
+    items.forEach(async it => {
+        if (it.desc || !it.itemId) return;
+        try {
+            const full = await fetchFullItem(it.itemId);
+            if (!full?.desc) return;
+            it.desc = stripHtml(full.desc).trim();
+            const el = document.querySelector(`.item-card[data-idx="${ALL.indexOf(it)}"] .card-desc`);
+            if (el) el.textContent = it.desc;
+        } catch(_) {}
+    });
+}
+
 /* ── View switching ─────────────────────────────────────────── */
 function setView(view) {
     currentView = view;
@@ -720,6 +734,11 @@ function setView(view) {
     const labels = { cards:'Grid view', list:'List view', row:'Row view' };
     const ann = document.getElementById('view-announce');
     if (ann) ann.textContent = labels[view] + ' active';
+
+    if (view === 'row') {
+        const visible = ALL.filter(it => currentFilter === 'all' || it.bk === currentFilter);
+        loadRowDescs(visible);
+    }
 }
 
 /* ── Filter & sort ──────────────────────────────────────────── */
@@ -743,6 +762,8 @@ function updateView() {
 
         grid.classList.remove('filtering', 'view-list', 'view-row');
         if (currentView !== 'cards') grid.classList.add(`view-${currentView}`);
+
+        if (currentView === 'row') loadRowDescs(filtered);
     }, 180);
 }
 
@@ -951,7 +972,14 @@ function openModal(idx) {
         fetchFullItem(it.itemId).then(full => {
             if (!full) return;
             const el = document.getElementById('desc-body');
-            if (el && full.desc) el.textContent = full.desc;
+            if (full.desc) {
+                const clean = stripHtml(full.desc).trim();
+                if (el) el.textContent = clean;
+                it.desc = it.desc || clean; // cache for row view
+                // Also update the card-desc element if it's visible in the grid
+                const cardEl = document.querySelector(`.item-card[data-idx="${ALL.indexOf(it)}"] .card-desc`);
+                if (cardEl && !cardEl.textContent.trim()) cardEl.textContent = clean;
+            }
             if (full.images && full.images.length > (it.images||[]).length) {
                 it.images = full.images; buildGallery(full.images);
             }
