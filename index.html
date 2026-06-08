@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trephemera - Horology & Stories</title>
+    <title>Trephemera - Horology &amp; Stories</title>
     <meta name="description" content="The essential stop for watch collectors. Rare vintage brochures, instruction manuals, catalogues and collector ephemera.">
     <link rel="canonical" href="https://trephemera.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,22 +18,39 @@
         }
         *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
         html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
-        
         body { background:var(--navy); color:var(--cream); font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:400; line-height:1.6; overflow-x:hidden; }
         img { display:block; max-width:100%; }
         button { font-family:inherit; }
 
-        :focus-visible { outline: 3px solid var(--rose-gold); outline-offset: 3px; border-radius: 2px; }
+        /* ── Accessibility ──────────────────────────────────── */
+        .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+        :focus-visible { outline:3px solid var(--rose-gold); outline-offset:3px; border-radius:2px; }
+        .skip-link {
+            position:absolute; top:-100%; left:16px; z-index:1000;
+            background:var(--rose-gold); color:var(--navy); padding:10px 22px;
+            font-weight:600; font-size:1rem; letter-spacing:2px; text-transform:uppercase;
+            text-decoration:none; border-radius:0 0 4px 4px; transition:top 0.2s;
+        }
+        .skip-link:focus { top:0; }
 
-        body { animation: pageEnter 0.45s ease both; }
+        @media (prefers-reduced-motion: reduce) {
+            *,*::before,*::after {
+                animation-duration:0.01ms !important;
+                animation-iteration-count:1 !important;
+                transition-duration:0.01ms !important;
+                scroll-behavior:auto !important;
+            }
+        }
+
+        /* ── Page transitions ───────────────────────────────── */
+        body { animation:pageEnter 0.45s ease both; }
         @keyframes pageEnter { from { opacity:0; } to { opacity:1; } }
-        body.page-exit { animation: pageExit 0.3s ease forwards; }
+        body.page-exit { animation:pageExit 0.3s ease forwards; }
         @keyframes pageExit { to { opacity:0; } }
         @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
 
-        nav { position:fixed; top:0; left:0; right:0; height:var(--nav-h); z-index:200; padding:0 var(--pad);
-            display:flex; justify-content:space-between; align-items:center;
-            background:rgba(10,21,32,0.97); border-bottom:1px solid rgba(196,154,108,0.12); backdrop-filter:blur(12px); }
+        /* ── Nav ────────────────────────────────────────────── */
+        nav { position:fixed; top:0; left:0; right:0; height:var(--nav-h); z-index:200; padding:0 var(--pad); display:flex; justify-content:space-between; align-items:center; background:rgba(10,21,32,0.97); border-bottom:1px solid rgba(196,154,108,0.12); backdrop-filter:blur(12px); }
         .nav-logo { font-size:clamp(1.2rem,2.2vw,1.6rem); font-weight:600; letter-spacing:4px; color:var(--rose-gold); text-decoration:none; text-transform:uppercase; }
         .nav-links { display:flex; gap:clamp(20px,3vw,40px); list-style:none; align-items:center; }
         .nav-links a { color:var(--cream); text-decoration:none; font-size:1rem; letter-spacing:2px; text-transform:uppercase; opacity:0.8; transition:opacity 0.25s,color 0.25s; }
@@ -45,23 +62,15 @@
         .nav-toggle.open span:nth-child(1) { transform:translateY(7px) rotate(45deg); }
         .nav-toggle.open span:nth-child(2) { opacity:0; }
         .nav-toggle.open span:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
-
-        .mobile-nav { position:fixed; top:var(--nav-h); left:0; right:0; bottom:0; z-index:150;
-            background:var(--navy); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:30px;
-            opacity:0; visibility:hidden; transition:opacity 0.3s,visibility 0.3s; }
+        .mobile-nav { position:fixed; top:var(--nav-h); left:0; right:0; bottom:0; z-index:150; background:var(--navy); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:30px; opacity:0; visibility:hidden; transition:opacity 0.3s,visibility 0.3s; }
         .mobile-nav.open { opacity:1; visibility:visible; }
         .mobile-nav a { color:var(--cream); text-decoration:none; font-size:1.8rem; font-weight:400; letter-spacing:4px; text-transform:uppercase; transition:color 0.25s; }
         .mobile-nav a:hover { color:var(--rose-gold); }
         .mobile-nav-rule { width:40px; height:1px; background:rgba(196,154,108,0.3); }
 
+        /* ── Hero ───────────────────────────────────────────── */
         .hero { min-height:100vh; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; padding:calc(var(--nav-h) + 40px) var(--pad) 80px; }
-        .hero-bg { 
-            position:absolute; inset:0; 
-            background: 
-                radial-gradient(ellipse at 30% 50%,rgba(196,154,108,0.08) 0%,transparent 60%),
-                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c49a6c' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
-                var(--navy); 
-        }
+        .hero-bg { position:absolute; inset:0; background:radial-gradient(ellipse at 30% 50%,rgba(196,154,108,0.08) 0%,transparent 60%),url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c49a6c' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),var(--navy); }
         .hero-ornament { position:absolute; width:clamp(280px,60vw,600px); height:clamp(280px,60vw,600px); border:1px solid rgba(196,154,108,0.06); border-radius:50%; top:50%; left:50%; transform:translate(-50%,-50%); animation:rotate 60s linear infinite; }
         .hero-ornament::before { content:''; position:absolute; inset:20px; border:1px solid rgba(196,154,108,0.04); border-radius:50%; }
         .hero-ornament::after { content:''; position:absolute; inset:-20px; border:1px solid rgba(196,154,108,0.03); border-radius:50%; }
@@ -76,6 +85,7 @@
         .hero-btn { display:inline-block; font-size:1rem; letter-spacing:4px; text-transform:uppercase; color:var(--rose-gold); text-decoration:none; border:1px solid rgba(196,154,108,0.5); padding:14px 42px; transition:background 0.3s,border-color 0.3s,letter-spacing 0.3s; opacity:0; animation:fadeInUp 1s ease 1.2s both; }
         .hero-btn:hover { background:rgba(196,154,108,0.1); border-color:var(--rose-gold); letter-spacing:5px; }
 
+        /* ── Essential section ──────────────────────────────── */
         .essential-section { padding:clamp(60px,8vw,100px) var(--pad); background:var(--navy); }
         .essential-inner { max-width:1100px; margin:0 auto; text-align:center; }
         .essential-eyebrow { font-size:1rem; letter-spacing:5px; text-transform:uppercase; color:var(--rose-gold); margin-bottom:20px; }
@@ -90,38 +100,53 @@
         .pillar-title { font-size:1.3rem; font-weight:500; color:var(--cream); letter-spacing:2px; margin-bottom:10px; }
         .pillar-text { font-size:1.05rem; color:var(--muted); line-height:1.8; }
 
+        /* ── Generic section ────────────────────────────────── */
         section { padding:clamp(60px,8vw,100px) var(--pad); }
         .section-header { text-align:center; margin-bottom:70px; }
         .section-eyebrow { font-size:1rem; letter-spacing:5px; text-transform:uppercase; color:var(--rose-gold); margin-bottom:16px; }
         .section-title { font-size:clamp(2.2rem,4vw,3.8rem); font-weight:400; letter-spacing:4px; color:var(--cream); text-transform:uppercase; }
         .section-rule { width:60px; height:1px; background:var(--rose-gold); margin:24px auto 0; opacity:0.5; }
 
+        /* ── Featured listings section ──────────────────────── */
         #listings { background:var(--cream); color:var(--navy); }
         #listings .section-eyebrow { color:var(--rose-gold-dark); font-weight:600; }
         #listings .section-title { color:var(--navy); font-weight:600; }
         #listings .section-rule { background:var(--navy); opacity:0.2; }
+
         .listings-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; max-width:1400px; margin:0 auto; }
-        .listing-card { background:#ffffff; overflow:hidden; position:relative; cursor:pointer; display:flex; flex-direction:column; transition:transform 0.35s, box-shadow 0.35s; text-decoration:none; color:inherit; border: 1px solid rgba(0,0,0,0.05); }
-        .listing-card:hover { transform:translateY(-5px); z-index:2; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+
+        /* ── Listing card ───────────────────────────────────── */
+        .listing-card { background:#ffffff; overflow:hidden; position:relative; cursor:pointer; display:flex; flex-direction:column; transition:transform 0.35s,box-shadow 0.35s; text-decoration:none; color:inherit; border:1px solid rgba(0,0,0,0.05); }
+        .listing-card:hover { transform:translateY(-5px); z-index:2; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
         .listing-card:hover .listing-cta { opacity:1; transform:translateY(0); }
         .listing-card:hover .listing-img { transform:scale(1.05); }
+
         .listing-img-wrap { aspect-ratio:1; overflow:hidden; background:var(--cream); flex-shrink:0; position:relative; }
         .listing-img { width:100%; height:100%; object-fit:cover; transition:transform 0.5s; }
         .listing-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#fff,var(--cream)); }
-        
-        .sold-badge { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) rotate(-15deg); font-size:2rem; font-weight:600; letter-spacing:6px; color:#d9534f; border:4px solid #d9534f; padding:10px 20px; z-index:10; background:rgba(255,255,255,0.85); text-transform:uppercase; pointer-events:none; }
+
+        /* Sold banner — matches collection page style */
+        .listing-sold-banner {
+            position:absolute; bottom:0; left:0; right:0;
+            background:rgba(10,21,32,0.88); color:var(--rose-gold);
+            font-size:0.82rem; font-weight:600; letter-spacing:4px; text-transform:uppercase;
+            padding:7px 0; text-align:center; z-index:10; backdrop-filter:blur(4px);
+        }
 
         .listing-cta { position:absolute; bottom:0; left:0; right:0; padding:11px; text-align:center; background:rgba(10,21,32,0.9); font-size:1rem; letter-spacing:3px; text-transform:uppercase; color:var(--rose-gold); opacity:0; transform:translateY(4px); transition:opacity 0.3s,transform 0.3s; }
+
         .listing-body { padding:20px; border-top:1px solid rgba(0,0,0,0.05); display:flex; flex-direction:column; flex:1; }
         .listing-brand { font-size:1rem; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--rose-gold-dark); margin-bottom:6px; }
         .listing-title { font-size:1.2rem; font-weight:500; color:var(--navy); line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; flex:1; margin-bottom:12px; }
         .listing-foot { display:flex; flex-direction:column; gap:4px; margin-top:auto; }
         .listing-price { font-size:1.2rem; font-weight:600; color:var(--navy-light); }
         .listing-meta { font-size:0.95rem; letter-spacing:1px; text-transform:uppercase; color:#666; }
+
         .view-all-wrap { text-align:center; margin-top:60px; }
         .view-all-btn { display:inline-block; font-size:1rem; font-weight:600; letter-spacing:4px; text-transform:uppercase; color:var(--navy); text-decoration:none; border:1px solid var(--navy); padding:14px 42px; transition:background 0.3s,color 0.3s,letter-spacing 0.3s; }
         .view-all-btn:hover { background:var(--navy); color:var(--cream); letter-spacing:5px; }
 
+        /* ── About section ──────────────────────────────────── */
         #about { background:var(--navy); }
         .about-inner { max-width:800px; margin:0 auto; text-align:center; }
         .about-text .section-header { text-align:center; margin-bottom:30px; }
@@ -130,6 +155,7 @@
         .about-body p + p { margin-top:18px; }
         .about-signature { margin-top:40px; font-style:italic; font-size:1.8rem; color:var(--rose-gold); }
 
+        /* ── Contact section ────────────────────────────────── */
         #contact { background:var(--cream); color:var(--navy); text-align:center; }
         #contact .section-eyebrow { color:var(--rose-gold-dark); font-weight:600; }
         #contact .section-title { color:var(--navy); font-weight:600; }
@@ -137,13 +163,12 @@
         .contact-inner { max-width:600px; margin:0 auto; }
         .contact-body { font-size:1.3rem; line-height:1.8; margin-bottom:40px; }
         .contact-links { display:flex; flex-direction:column; gap:20px; align-items:center; margin-bottom:40px; }
-        
-        .contact-email, .contact-whatsapp { font-size:clamp(1.3rem,2.5vw,1.8rem); font-weight:600; color:var(--rose-gold-dark); text-decoration:none; letter-spacing:2px; transition:opacity 0.3s; display:flex; align-items:center; gap:10px; justify-content:center; }
-        .contact-email:hover, .contact-whatsapp:hover { opacity:0.7; }
-        
+        .contact-email,.contact-whatsapp { font-size:clamp(1.3rem,2.5vw,1.8rem); font-weight:600; color:var(--rose-gold-dark); text-decoration:none; letter-spacing:2px; transition:opacity 0.3s; display:flex; align-items:center; gap:10px; justify-content:center; }
+        .contact-email:hover,.contact-whatsapp:hover { opacity:0.7; }
         .contact-ebay { display:inline-block; font-size:1rem; font-weight:600; letter-spacing:4px; text-transform:uppercase; color:var(--navy); text-decoration:none; border:1px solid var(--navy); padding:14px 42px; transition:background 0.3s,color 0.3s; }
         .contact-ebay:hover { background:var(--navy); color:var(--cream); }
 
+        /* ── Footer ─────────────────────────────────────────── */
         footer { background:var(--navy); border-top:1px solid rgba(196,154,108,0.1); padding:36px var(--pad); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
         .footer-logo { font-size:1.3rem; font-weight:600; letter-spacing:4px; color:var(--rose-gold); text-transform:uppercase; }
         .footer-copy { font-size:1rem; letter-spacing:2px; color:var(--muted); text-transform:uppercase; }
@@ -161,12 +186,12 @@
             .essential-pillars { grid-template-columns:1fr; max-width:380px; }
             footer { flex-direction:column; text-align:center; }
         }
-        @media (max-width:600px) {
-            .hero-ornament { width:260px; height:260px; }
-        }
+        @media (max-width:600px) { .hero-ornament { width:260px; height:260px; } }
     </style>
 </head>
 <body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <nav aria-label="Main Navigation">
     <a href="index.html" class="nav-logo">Trephemera</a>
@@ -186,16 +211,16 @@
     <a href="#contact">Contact</a>
 </div>
 
-<main>
+<main id="main-content">
     <section class="hero" id="home">
         <div class="hero-bg"></div>
-        <div class="hero-ornament"></div>
+        <div class="hero-ornament" aria-hidden="true"></div>
         <div class="hero-content">
             <p class="hero-eyebrow">Brussels, Belgium</p>
             <h1 class="hero-title">Trephemera</h1>
-            <p class="hero-subtitle">Horology & Stories</p>
-            <p class="hero-tagline">Rare Brochures, Vintage Catalogues & Collector Ephemera</p>
-            <div class="hero-divider"></div>
+            <p class="hero-subtitle">Horology &amp; Stories</p>
+            <p class="hero-tagline">Rare Brochures, Vintage Catalogues &amp; Collector Ephemera</p>
+            <div class="hero-divider" aria-hidden="true"></div>
             <a href="collections.html" class="hero-btn">Explore the Collection</a>
         </div>
     </section>
@@ -206,7 +231,7 @@
             <h2 class="essential-title">The <em>Essential Stop</em> for Every Watch Collector</h2>
             <p class="essential-sub">Whether you are building your archive, completing your reference library, or hunting for that one piece you have been searching for years: Trephemera is where serious collectors come. Every item is genuine, every description honest, and every find carefully sourced by collectors who understand what matters.</p>
             <div class="essential-pillars">
-                <div class="pillar"><span class="pillar-icon" aria-hidden="true">✦</span><div class="pillar-title">Genuine & Rare</div><p class="pillar-text">Every piece authenticated and sourced directly. No bulk lots, no reproductions, no shortcuts.</p></div>
+                <div class="pillar"><span class="pillar-icon" aria-hidden="true">✦</span><div class="pillar-title">Genuine &amp; Rare</div><p class="pillar-text">Every piece authenticated and sourced directly. No bulk lots, no reproductions, no shortcuts.</p></div>
                 <div class="pillar"><span class="pillar-icon" aria-hidden="true">◈</span><div class="pillar-title">Collector Curated</div><p class="pillar-text">Selected by collectors, for collectors. We only list what we believe in and would keep ourselves.</p></div>
                 <div class="pillar"><span class="pillar-icon" aria-hidden="true">⊕</span><div class="pillar-title">Ships Worldwide</div><p class="pillar-text">From Brussels to every corner of the world. Every item carefully packed and fully insured.</p></div>
             </div>
@@ -230,7 +255,6 @@
             <div class="about-text reveal">
                 <div class="section-header">
                     <p class="section-eyebrow">Our Story</p>
-                    <h2 class="section-title">Tracy & Ralph</h2>
                     <div class="section-rule"></div>
                 </div>
                 <div class="about-body">
@@ -239,7 +263,7 @@
                     <p>We are just getting started. In 2027 we will be expanding into vintage and modern watch parts, accessories, and beyond. If you are a collector who appreciates the stories behind the watches as much as the watches themselves, you are in the right place.</p>
                     <p>Questions? Always feel free to reach out. Tell us what you are looking for, we might just have it.</p>
                 </div>
-                <div class="about-signature">Tracy & Ralph</div>
+                <div class="about-signature">Tracy &amp; Ralph</div>
             </div>
         </div>
     </section>
@@ -255,11 +279,11 @@
             <div class="contact-links">
                 <a href="mailto:ralph@trephemera.com" class="contact-email">ralph@trephemera.com</a>
                 <a href="https://wa.me/32490113208" class="contact-whatsapp" target="_blank" rel="noopener noreferrer">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.487-1.761-1.663-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.487-1.761-1.663-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
                     WhatsApp: +32 490 11 32 08
                 </a>
             </div>
-            <a href="https://www.ebay.com/usr/trephemera" target="_blank" class="contact-ebay">Visit Our eBay Store</a>
+            <a href="https://www.ebay.com/usr/trephemera" target="_blank" rel="noopener noreferrer" class="contact-ebay">Visit Our eBay Store</a>
         </div>
     </section>
 </main>
@@ -288,10 +312,8 @@ toggle.addEventListener('click', () => {
     document.body.style.overflow = open ? 'hidden' : '';
 });
 mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
-    mobileNav.classList.remove('open');
-    toggle.classList.remove('open');
-    toggle.setAttribute('aria-expanded', 'false');
-    mobileNav.setAttribute('aria-hidden', 'true');
+    mobileNav.classList.remove('open'); toggle.classList.remove('open');
+    toggle.setAttribute('aria-expanded','false'); mobileNav.setAttribute('aria-hidden','true');
     document.body.style.overflow = '';
 }));
 
@@ -315,64 +337,26 @@ function watchSVG() {
 }
 
 const CONDITION_EN = {
-    // --- French Translations ---
-    'neuf': 'New', 
-    'neuf avec étiquettes': 'New with tags', 
-    'neuf sans étiquette': 'New without tags',
-    'neuf sans étiquettes': 'New without tags', 
-    'neuf sans emballage': 'New without box', 
-    'comme neuf': 'Like New',
-    'neuf (autre)': 'New (other)', 
-    'neuf : autre (voir les détails)': 'New (other)', 
-    'neuf autre (voir les détails)': 'New (other)',
-    'occasion': 'Used', 
-    "d'occasion": 'Used', 
-    'très bon état': 'Very good', 
-    'bon état': 'Good',
-    'état correct': 'Acceptable', 
-    'satisfaisant': 'Acceptable', 
-    'reconditionné': 'Refurbished',
-    'reconditionné par le fabricant': 'Manufacturer refurbished', 
-    'reconditionné par le vendeur': 'Seller refurbished',
-    'reconditionné de façon professionnelle': 'Refurbished', 
-    'pour pièces ou ne fonctionnant pas': 'For parts',
-    'pièces détachées': 'For parts',
-
-    // --- Dutch Translations ---
-    'nieuw': 'New',
-    'nieuw met labels': 'New with tags',
-    'nieuw met prijskaartje': 'New with tags',
-    'nieuw met tags': 'New with tags',
-    'nieuw zonder labels': 'New without tags',
-    'nieuw zonder prijskaartje': 'New without tags',
-    'nieuw zonder tags': 'New without tags',
-    'nieuw zonder doos': 'New without box',
-    'nieuw zonder verpakking': 'New without box',
-    'als nieuw': 'Like New',
-    'zo goed als nieuw': 'Like New',
-    'nieuw (overig)': 'New (other)',
-    'nieuw: overig (zie details)': 'New (other)',
-    'nieuw overig (zie details)': 'New (other)',
-    'tweedehands': 'Used',
-    'gebruikt': 'Used',
-    'zeer goed': 'Very good',
-    'in zeer goede staat': 'Very good',
-    'goed': 'Good',
-    'in goede staat': 'Good',
-    'acceptabel': 'Acceptable',
-    'redelijk': 'Acceptable',
-    'in redelijke staat': 'Acceptable',
-    'gereviseerd': 'Refurbished',
-    'refurbished': 'Refurbished',
-    'door de fabrikant gereviseerd': 'Manufacturer refurbished',
-    'gereviseerd door fabrikant': 'Manufacturer refurbished',
-    'door de verkoper gereviseerd': 'Seller refurbished',
-    'gereviseerd door verkoper': 'Seller refurbished',
-    'voor onderdelen of niet werkend': 'For parts',
-    'voor onderdelen': 'For parts',
-    'defect': 'For parts'
+    'neuf':'New','neuf avec étiquettes':'New with tags','neuf sans étiquette':'New without tags',
+    'neuf sans étiquettes':'New without tags','neuf sans emballage':'New without box','comme neuf':'Like New',
+    'neuf (autre)':'New (other)','neuf : autre (voir les détails)':'New (other)','neuf autre (voir les détails)':'New (other)',
+    'occasion':'Used',"d'occasion":'Used','très bon état':'Very good','bon état':'Good',
+    'état correct':'Acceptable','satisfaisant':'Acceptable','reconditionné':'Refurbished',
+    'reconditionné par le fabricant':'Manufacturer refurbished','reconditionné par le vendeur':'Seller refurbished',
+    'reconditionné de façon professionnelle':'Refurbished','pour pièces ou ne fonctionnant pas':'For parts','pièces détachées':'For parts',
+    'nieuw':'New','nieuw met labels':'New with tags','nieuw met prijskaartje':'New with tags','nieuw met tags':'New with tags',
+    'nieuw zonder labels':'New without tags','nieuw zonder prijskaartje':'New without tags','nieuw zonder tags':'New without tags',
+    'nieuw zonder doos':'New without box','nieuw zonder verpakking':'New without box',
+    'als nieuw':'Like New','zo goed als nieuw':'Like New','nieuw (overig)':'New (other)',
+    'nieuw: overig (zie details)':'New (other)','nieuw overig (zie details)':'New (other)',
+    'tweedehands':'Used','gebruikt':'Used','zeer goed':'Very good','in zeer goede staat':'Very good',
+    'goed':'Good','in goede staat':'Good','acceptabel':'Acceptable','redelijk':'Acceptable',
+    'in redelijke staat':'Acceptable','gereviseerd':'Refurbished','refurbished':'Refurbished',
+    'door de fabrikant gereviseerd':'Manufacturer refurbished','gereviseerd door fabrikant':'Manufacturer refurbished',
+    'door de verkoper gereviseerd':'Seller refurbished','gereviseerd door verkoper':'Seller refurbished',
+    'voor onderdelen of niet werkend':'For parts','voor onderdelen':'For parts','defect':'For parts'
 };
-    
+
 function translateCondition(c) {
     if (!c) return 'See Listing';
     return CONDITION_EN[c.trim().toLowerCase()] || c;
@@ -385,23 +369,30 @@ function stripBrandFromTitle(title, brandLabel) {
 }
 
 function renderFeatured(items) {
-    document.getElementById('listings-container').innerHTML = items.map((p,i) => {
-        const watermark = p.sold ? `<div class="sold-badge">Sold</div>` : '';
+    document.getElementById('listings-container').innerHTML = items.map((p, i) => {
+        const soldBanner   = p.sold ? `<div class="listing-sold-banner" aria-hidden="true">Sold</div>` : '';
+        const imgFilter    = p.sold ? 'filter:grayscale(100%);' : '';
         const priceDisplay = p.sold ? '' : `<div class="listing-price">${p.price}</div>`;
+        const brandText    = p.sold ? `${p.brand} · Sold` : p.brand;
+        const ctaLabel     = p.sold ? '' : `<div class="listing-cta" aria-hidden="true">View Details</div>`;
 
         return `
-        <a href="collections.html" class="listing-card" style="animation:fadeUp .4s ease ${Math.min(i*.06,.35).toFixed(2)}s both" aria-label="View details for ${p.title}">
+        <a href="collections.html" class="listing-card"
+           style="animation:fadeUp .4s ease ${Math.min(i*.06,.35).toFixed(2)}s both"
+           aria-label="${p.sold ? `${p.brand}: ${p.title} — Sold` : `View details for ${p.brand}: ${p.title}`}">
             <div class="listing-img-wrap">
-                ${watermark}
-                ${p.image ? `<img src="${ebayImg(p.image,600)}" srcset="${ebayImg(p.image,400)} 400w, ${ebayImg(p.image,600)} 600w, ${ebayImg(p.image,900)} 900w" sizes="(max-width:720px) 90vw, (max-width:1100px) 45vw, 30vw" alt="${p.title}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">` : `<div class="listing-placeholder">${watchSVG()}</div>`}
-                <div class="listing-cta">View Details</div>
+                ${soldBanner}
+                ${p.image
+                    ? `<img src="${ebayImg(p.image,600)}" srcset="${ebayImg(p.image,400)} 400w, ${ebayImg(p.image,600)} 600w, ${ebayImg(p.image,900)} 900w" sizes="(max-width:720px) 90vw, (max-width:1100px) 45vw, 30vw" class="listing-img" alt="${p.brand} – ${p.title}" style="${imgFilter}" loading="lazy" decoding="async">`
+                    : `<div class="listing-placeholder">${watchSVG()}</div>`}
+                ${ctaLabel}
             </div>
             <div class="listing-body">
-                <div class="listing-brand">${p.brand}</div>
+                <div class="listing-brand">${brandText}</div>
                 <div class="listing-title">${p.title}</div>
                 <div class="listing-foot">${priceDisplay}<div class="listing-meta">${p.meta}</div></div>
             </div>
-        </a>`
+        </a>`;
     }).join('');
 }
 
@@ -410,7 +401,11 @@ function loadFeatured() {
         .then(r => r.json())
         .then(items => {
             if (!items || !items.length) throw new Error('empty');
-            renderFeatured(items.filter(i => !i.sold && i.sellingState !== 'ENDED').slice(0, 6).map(item => {
+            // Show available items first, sold at the end, limit 6
+            const available = items.filter(i => !i.sold && i.sellingState !== 'ENDED');
+            const sold = items.filter(i => i.sold || i.sellingState === 'ENDED');
+            const combined = [...available, ...sold].slice(0, 6);
+            renderFeatured(combined.map(item => {
                 const brand = item.title.split(' ')[0];
                 return {
                     brand: brand,
@@ -423,17 +418,20 @@ function loadFeatured() {
             }));
         })
         .catch(() => renderFeatured([
-            { brand:'Rolex', title: stripBrandFromTitle('Rolex Submariner 50th Anniversary Brochure', 'Rolex'), price:'€140.00', meta:'Collector Brochure', image:null, sold: false },
-            { brand:'Patek Philippe', title: stripBrandFromTitle('Patek Philippe Annual Collection Vintage Catalogue', 'Patek Philippe'), price:'€120.00', meta:'Vintage Catalogue', image:null, sold: true },
-            { brand:'Audemars Piguet', title: stripBrandFromTitle('Audemars Piguet Royal Oak 50th Anniversary Docs', 'Audemars Piguet'), price:'€95.00', meta:'Rare Ephemera', image:null, sold: false },
-            { brand:'Vacheron Constantin', title: stripBrandFromTitle('Vacheron Constantin Overseas Vintage Catalogue', 'Vacheron Constantin'), price:'€75.00', meta:'Vintage Catalogue', image:null, sold: false },
-            { brand:'Richard Mille', title: stripBrandFromTitle('Richard Mille RM 035 Original Instruction Manual', 'Richard Mille'), price:'€110.00', meta:'Instruction Manual', image:null, sold: true },
-            { brand:'A. Lange & Sohne', title: stripBrandFromTitle('A. Lange & Sohne Lange 1 25th Anniversary Brochure', 'A. Lange & Sohne'), price:'€130.00', meta:'Collector Brochure', image:null, sold: false },
+            { brand:'Rolex',             title:'Submariner 50th Anniversary Brochure',         price:'€140.00', meta:'Collector Brochure', image:null, sold:false },
+            { brand:'Patek Philippe',    title:'Annual Collection Vintage Catalogue',           price:'€120.00', meta:'Vintage Catalogue',  image:null, sold:true  },
+            { brand:'Audemars Piguet',   title:'Royal Oak 50th Anniversary Documentation',     price:'€95.00',  meta:'Rare Ephemera',      image:null, sold:false },
+            { brand:'Vacheron Constantin', title:'Overseas Vintage Catalogue',                 price:'€75.00',  meta:'Vintage Catalogue',  image:null, sold:false },
+            { brand:'Richard Mille',     title:'RM 035 Original Instruction Manual',           price:'€110.00', meta:'Instruction Manual', image:null, sold:true  },
+            { brand:'A. Lange & Söhne',  title:'Lange 1 25th Anniversary Brochure',           price:'€130.00', meta:'Collector Brochure', image:null, sold:false },
         ]));
 }
 loadFeatured();
 
-const obs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }), { threshold:0.08 });
+const obs = new IntersectionObserver(
+    es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold:0.08 }
+);
 document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 </script>
 </body>
@@ -445,6 +443,5 @@ document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-1WTCQ3ZKZK');
 </script>
