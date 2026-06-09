@@ -402,6 +402,7 @@
                         <option value="price-desc">Price: High to Low</option>
                         <option value="brand-asc">Brand: A to Z</option>
                         <option value="title-asc">Title: A to Z</option>
+                        <option value="sold-only">Sold Items Only</option>
                     </select>
                 </div>
 
@@ -600,7 +601,7 @@ const CONDITION_EN = {
     'in redelijke staat':'Acceptable','gereviseerd':'Refurbished','refurbished':'Refurbished',
     'door de fabrikant gereviseerd':'Manufacturer refurbished','gereviseerd door fabrikant':'Manufacturer refurbished',
     'door de verkoper gereviseerd':'Seller refurbished','gereviseerd door verkoper':'Seller refurbished',
-    'voor onderdelen of niet werkend':'For parts','voor onderdelen':'For parts','defect':'For parts'
+    'heel goed':'Very good','in heel goede staat':'Very good', 'voor onderdelen of niet werkend':'For parts','voor onderdelen':'For parts', 'voor onderdelen, niet werkend':'For parts','defect':'For parts'
 };
 function translateCondition(c) {
     if (!c) return 'See Listing';
@@ -747,16 +748,22 @@ function updateView() {
     grid.classList.add('filtering');
 
     setTimeout(() => {
-        let filtered = ALL.filter(it => currentFilter === 'all' || it.bk === currentFilter);
-
-        filtered.sort((a, b) => {
-            if (a.sold !== b.sold) return a.sold ? 1 : -1;
-            if (currentSort === 'price-asc')  return parsePrice(a.price) - parsePrice(b.price);
-            if (currentSort === 'price-desc') return parsePrice(b.price) - parsePrice(a.price);
-            if (currentSort === 'brand-asc')  return a.bl.localeCompare(b.bl);
-            if (currentSort === 'title-asc')  return a.title.localeCompare(b.title);
-            return 0;
+        let filtered = ALL.filter(it => {
+            const brandMatch = currentFilter === 'all' || it.bk === currentFilter;
+            if (currentSort === 'sold-only') return brandMatch && it.sold;
+            return brandMatch;
         });
+
+        if (currentSort !== 'sold-only') {
+            filtered.sort((a, b) => {
+                if (a.sold !== b.sold) return a.sold ? 1 : -1;
+                if (currentSort === 'price-asc')  return parsePrice(a.price) - parsePrice(b.price);
+                if (currentSort === 'price-desc') return parsePrice(b.price) - parsePrice(a.price);
+                if (currentSort === 'brand-asc')  return a.bl.localeCompare(b.bl);
+                if (currentSort === 'title-asc')  return a.title.localeCompare(b.title);
+                return 0;
+            });
+        }
 
         renderGrid(filtered);
 
