@@ -167,6 +167,41 @@ async function fetchSoldViaTrading(userToken, appId, devId, certId) {
     return allBlocks.map(normalizeTradingSoldItem).filter(i => i.itemId);
 }
 
+async function fetchActiveViaTrading(userToken, appId, devId, certId) {
+    const allBlocks = [];
+    let page = 1;
+    let totalPages = 1;
+
+    while (page <= totalPages) {
+        const xml = `<?xml version="1.0" encoding="utf-8"?>
+<GetMyeBaySellingRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+  <DetailLevel>ReturnAll</DetailLevel>
+  <ActiveList>
+    <Include>true</Include>
+    <Pagination>
+      <EntriesPerPage>200</EntriesPerPage>
+      <PageNumber>${page}</PageNumber>
+    </Pagination>
+  </ActiveList>
+</GetMyeBaySellingRequest>`;
+
+        const response = await tradingCall('GetMyeBaySelling', xml, userToken, appId, devId, certId);
+        const ack = extractTag(response, 'Ack');
+        if (ack !== 'Success' && ack !== 'Warning') break;
+
+        const activeList = response.match(/<ActiveList>([\s\S]*?)<\/ActiveList>/i)?.[1] || '';
+        allBlocks.push(...extractItemBlocks(activeList));
+
+        const pages = parseInt(extractTag(activeList, 'TotalNumberOfPages'), 10);
+        totalPages = Number.isFinite(pages) && pages > 0 ? pages : 1;
+        page++;
+    }
+
+    return allBlocks
+        .map(b => { const i = normalizeTradingSoldItem(b); i.sold = false; return i; })
+        .filter(i => i.itemId);
+}
+
 async function fetchBrowseItem(ebayHeaders, id) {
     const trimmed = (id || '').trim();
     if (!trimmed) return null;
@@ -312,6 +347,27 @@ module.exports = async (req, res) => {
         }
 
         const active = Array.from(unique.values());
+
+        // Supplement Browse API results with Trading API active list
+        // to catch any items in categories not covered by the 3 Browse searches
+        const userToken = await getUserToken(APP_ID, CERT_ID);
+        if (userToken) {
+            const tradingActive = await fetchActiveViaTrading(userToken, APP_ID, DEV_ID, CERT_ID);
+            const browseIds = new Set();
+            for (const item of active) {
+                browseIds.add(item.itemId);
+                const legacy = legacyIdFromBrowseId(item.itemId);
+                if (legacy) browseIds.add(legacy);
+            }
+            for (const tradingItem of tradingActive) {
+                const legacy = legacyIdFromBrowseId(tradingItem.itemId);
+                if (!browseIds.has(tradingItem.itemId) && !browseIds.has(legacy)) {
+                    const browseItem = await fetchBrowseItem(ebayHeaders, tradingItem.itemId);
+                    active.push(browseItem ? normalizeBrowseItem(browseItem, false) : tradingItem);
+                }
+            }
+        }
+
         const sold = await fetchSoldItems(APP_ID, DEV_ID, CERT_ID, ebayHeaders);
 
         const activeIds = new Set();
