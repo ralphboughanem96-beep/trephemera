@@ -128,6 +128,18 @@
         }
         .collection-grid.filtering { opacity:0; }
 
+        /* ── Skeleton loading state ──────────────────────────── */
+        @keyframes shimmer { 0% { background-position:-400px 0; } 100% { background-position:400px 0; } }
+        .skeleton-card { background:#fff; border:1px solid rgba(0,0,0,0.05); overflow:hidden; display:flex; flex-direction:column; }
+        .skeleton-shine { background:linear-gradient(90deg,#ececec 25%,#f6f6f6 37%,#ececec 63%); background-size:400px 100%; animation:shimmer 1.4s ease infinite; }
+        .skeleton-img { aspect-ratio:1/1; }
+        .skeleton-body { padding:20px; display:flex; flex-direction:column; gap:10px; }
+        .skeleton-line { height:14px; border-radius:3px; }
+        .skeleton-line.w-40 { width:40%; }
+        .skeleton-line.w-90 { width:90%; }
+        .skeleton-line.w-70 { width:70%; }
+        .skeleton-line.w-30 { width:30%; margin-top:auto; }
+
         /* ── Item card (base / cards view) ──────────────────── */
         .item-card { background:#fff; cursor:pointer; overflow:hidden; display:flex; flex-direction:column; transition:transform 0.3s,box-shadow 0.3s; border:1px solid rgba(0,0,0,0.05); }
         .item-card:hover { transform:translateY(-4px); z-index:2; box-shadow:0 10px 25px rgba(0,0,0,0.08); }
@@ -558,6 +570,10 @@ const BRAND_ALIASES = {
 };
 const STOPWORDS = new Set(['the','a','an','rare','vintage','original','genuine','authentic','official','new','old','antique','set','lot','watch','watches']);
 function slugify(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'other'; }
+// Normalizes any casing eBay/sellers throw at us ("BREITLING", "zenith") to "Breitling", "Zenith".
+function toTitleCase(s) {
+    return (s || '').toLowerCase().replace(/\b([a-zà-ÿ])/gi, c => c.toUpperCase());
+}
 function detectBrand(title) {
     const t = (title || '').toLowerCase();
     for (const b of BRANDS) if (b.terms.some(s => t.includes(s))) return { key:b.key, label:b.label };
@@ -569,7 +585,7 @@ function detectBrand(title) {
     const first = words.find(w => !STOPWORDS.has(w.toLowerCase())) || words[0] || 'Other';
     const alias = BRAND_ALIASES[first.toLowerCase()];
     if (alias) return alias;
-    const label = first.charAt(0).toUpperCase() + first.slice(1);
+    const label = toTitleCase(first);
     return { key: slugify(label), label };
 }
 // Brand came straight from eBay (item specific / aspect) — trust it over the title.
@@ -580,7 +596,8 @@ function matchKnownBrand(apiBrand) {
     for (const b of BRANDS) {
         if (t === b.label.toLowerCase() || b.terms.some(s => t.includes(s))) return { key:b.key, label:b.label };
     }
-    return { key: slugify(apiBrand), label: apiBrand };
+    const label = toTitleCase(apiBrand.trim());
+    return { key: slugify(label), label };
 }
 function stripBrandFromTitle(title, brandLabel) {
     if (!title || !brandLabel) return title;
@@ -682,6 +699,24 @@ try { currentView = sessionStorage.getItem('trephemera-view') || 'cards'; } catc
 function parsePrice(priceStr) {
     if (!priceStr) return 0;
     return parseFloat(priceStr.replace(/[^0-9.-]+/g,'')) || 0;
+}
+
+/* ── Loading skeleton (shown until the first fetch resolves) ── */
+function renderSkeleton(count = 8) {
+    const grid = document.getElementById('collection-grid');
+    grid.classList.remove('view-list', 'view-row', 'filtering');
+    grid.innerHTML = Array.from({ length: count }).map(() => `
+        <div class="skeleton-card" aria-hidden="true">
+            <div class="skeleton-img skeleton-shine"></div>
+            <div class="skeleton-body">
+                <div class="skeleton-line skeleton-shine w-40"></div>
+                <div class="skeleton-line skeleton-shine w-90"></div>
+                <div class="skeleton-line skeleton-shine w-70"></div>
+                <div class="skeleton-line skeleton-shine w-30"></div>
+            </div>
+        </div>
+    `).join('');
+    document.getElementById('visible-count').textContent = '…';
 }
 
 /* ── Render grid ────────────────────────────────────────────── */
@@ -1058,6 +1093,7 @@ document.querySelectorAll('.view-btn').forEach(btn => {
     btn.addEventListener('click', () => setView(btn.dataset.view));
 });
 
+renderSkeleton();
 fetchItems()
     .then(items => {
         ALL = items.length > 0 ? items : DATA;
