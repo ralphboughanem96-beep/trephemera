@@ -40,9 +40,33 @@ function extractItemBlocks(xml) {
     return items;
 }
 
+// Pulls a single named value out of an Item's <ItemSpecifics><NameValueList> block,
+// e.g. extractItemSpecific(block, 'Brand') -> "Rolex". This is the seller-entered
+// item specific straight from eBay, not a guess from the title.
+function extractItemSpecific(block, name) {
+    const re = /<NameValueList>([\s\S]*?)<\/NameValueList>/gi;
+    let m;
+    while ((m = re.exec(block || '')) !== null) {
+        const n = extractTag(m[1], 'Name');
+        if (n && n.toLowerCase() === name.toLowerCase()) return extractTag(m[1], 'Value');
+    }
+    return '';
+}
+
 function legacyIdFromBrowseId(id) {
     const parts = (id || '').split('|');
     return parts.length >= 2 ? parts[1] : id;
+}
+
+// Pulls the "Brand" aspect out of a full Browse API item resource's localizedAspects
+// (only present on item/get, not on item_summary/search results).
+function extractBrowseBrand(item) {
+    const aspects = item.localizedAspects || item.aspects;
+    if (Array.isArray(aspects)) {
+        const found = aspects.find(a => (a.name || a.localizedName || '').toLowerCase() === 'brand');
+        if (found) return found.value || (Array.isArray(found.values) ? found.values[0] : '') || '';
+    }
+    return '';
 }
 
 function normalizeBrowseItem(item, sold = false) {
@@ -56,6 +80,7 @@ function normalizeBrowseItem(item, sold = false) {
         additionalImages: item.additionalImages || [],
         itemWebUrl: item.itemWebUrl,
         shortDescription: desc,
+        brand: extractBrowseBrand(item),
         sold
     };
 }
@@ -78,6 +103,7 @@ function normalizeTradingSoldItem(block) {
         additionalImages: pictureUrls.filter(u => u !== mainImage).map(url => ({ imageUrl: url })),
         itemWebUrl: extractTag(block, 'ViewItemURL'),
         shortDescription: stripHtml(extractTag(block, 'Description')) || '',
+        brand: extractItemSpecific(block, 'Brand'),
         sold: true
     };
 }
@@ -226,7 +252,11 @@ async function fetchBrowseItem(ebayHeaders, id) {
 
 async function enrichSoldItem(tradingItem, ebayHeaders, userToken, appId, devId, certId) {
     const browseItem = await fetchBrowseItem(ebayHeaders, tradingItem.itemId);
-    if (browseItem) return normalizeBrowseItem(browseItem, true);
+    if (browseItem) {
+        const normalized = normalizeBrowseItem(browseItem, true);
+        if (!normalized.brand) normalized.brand = tradingItem.brand || '';
+        return normalized;
+    }
 
     if (userToken && !tradingItem.shortDescription) {
         const getItemXml = `<?xml version="1.0" encoding="utf-8"?>
@@ -348,22 +378,32 @@ module.exports = async (req, res) => {
 
         const active = Array.from(unique.values());
 
-        // Supplement Browse API results with Trading API active list
-        // to catch any items in categories not covered by the 3 Browse searches
+        // Supplement Browse API results with Trading API active list to catch any
+        // items in categories not covered by the 3 Browse searches, and — since
+        // Trading API already returns each item's ItemSpecifics in the same bulk
+        // call — use it to attach the seller's actual "Brand" specific to every
+        // active item instead of guessing the brand from the title.
         const userToken = await getUserToken(APP_ID, CERT_ID);
         if (userToken) {
             const tradingActive = await fetchActiveViaTrading(userToken, APP_ID, DEV_ID, CERT_ID);
+            const tradingByLegacy = new Map();
+            for (const t of tradingActive) if (t.itemId) tradingByLegacy.set(String(t.itemId), t);
+
             const browseIds = new Set();
             for (const item of active) {
                 browseIds.add(item.itemId);
                 const legacy = legacyIdFromBrowseId(item.itemId);
                 if (legacy) browseIds.add(legacy);
+                const match = tradingByLegacy.get(String(legacy)) || tradingByLegacy.get(String(item.itemId));
+                if (match && match.brand) item.brand = match.brand;
             }
             for (const tradingItem of tradingActive) {
                 const legacy = legacyIdFromBrowseId(tradingItem.itemId);
                 if (!browseIds.has(tradingItem.itemId) && !browseIds.has(legacy)) {
                     const browseItem = await fetchBrowseItem(ebayHeaders, tradingItem.itemId);
-                    active.push(browseItem ? normalizeBrowseItem(browseItem, false) : tradingItem);
+                    const enriched = browseItem ? normalizeBrowseItem(browseItem, false) : tradingItem;
+                    if (!enriched.brand) enriched.brand = tradingItem.brand || '';
+                    active.push(enriched);
                 }
             }
         }
