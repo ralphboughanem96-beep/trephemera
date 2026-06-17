@@ -40,16 +40,22 @@ function extractItemBlocks(xml) {
     return items;
 }
 
-// Pulls a single named value out of an Item's <ItemSpecifics><NameValueList> block,
-// e.g. extractItemSpecific(block, 'Brand') -> "Rolex". This is the seller-entered
-// item specific straight from eBay, not a guess from the title.
-function extractItemSpecific(block, name) {
+// Pulls a named value out of an Item's <ItemSpecifics><NameValueList> block,
+// e.g. extractItemSpecific(block, ['Brand','Manufacturer']) -> "Rolex". This is
+// the seller-entered item specific straight from eBay, not a guess from the title.
+// Some eBay categories (especially paper ephemera / collectibles, as opposed to
+// the watches themselves) don't expose a "Brand" aspect at all and use
+// "Manufacturer" or nothing instead, so we check a short priority list.
+function extractItemSpecific(block, names) {
+    const wanted = (Array.isArray(names) ? names : [names]).map(n => n.toLowerCase());
+    const found = {};
     const re = /<NameValueList>([\s\S]*?)<\/NameValueList>/gi;
     let m;
     while ((m = re.exec(block || '')) !== null) {
         const n = extractTag(m[1], 'Name');
-        if (n && n.toLowerCase() === name.toLowerCase()) return extractTag(m[1], 'Value');
+        if (n) found[n.toLowerCase()] = extractTag(m[1], 'Value');
     }
+    for (const name of wanted) if (found[name]) return found[name];
     return '';
 }
 
@@ -58,13 +64,21 @@ function legacyIdFromBrowseId(id) {
     return parts.length >= 2 ? parts[1] : id;
 }
 
+const BRAND_ASPECT_NAMES = ['Brand', 'Manufacturer', 'Maker'];
+
 // Pulls the "Brand" aspect out of a full Browse API item resource's localizedAspects
-// (only present on item/get, not on item_summary/search results).
+// (only present on item/get, not on item_summary/search results). Same fallback
+// chain as the Trading API path above.
 function extractBrowseBrand(item) {
     const aspects = item.localizedAspects || item.aspects;
     if (Array.isArray(aspects)) {
-        const found = aspects.find(a => (a.name || a.localizedName || '').toLowerCase() === 'brand');
-        if (found) return found.value || (Array.isArray(found.values) ? found.values[0] : '') || '';
+        for (const name of BRAND_ASPECT_NAMES) {
+            const found = aspects.find(a => (a.name || a.localizedName || '').toLowerCase() === name.toLowerCase());
+            if (found) {
+                const v = found.value || (Array.isArray(found.values) ? found.values[0] : '') || '';
+                if (v) return v;
+            }
+        }
     }
     return '';
 }
@@ -103,7 +117,7 @@ function normalizeTradingSoldItem(block) {
         additionalImages: pictureUrls.filter(u => u !== mainImage).map(url => ({ imageUrl: url })),
         itemWebUrl: extractTag(block, 'ViewItemURL'),
         shortDescription: stripHtml(extractTag(block, 'Description')) || '',
-        brand: extractItemSpecific(block, 'Brand'),
+        brand: extractItemSpecific(block, BRAND_ASPECT_NAMES),
         sold: true
     };
 }
