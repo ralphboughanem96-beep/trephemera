@@ -279,11 +279,47 @@ async function fetchSoldItems(appId, devId, certId, ebayHeaders) {
     if (!userToken) return [];
 
     const tradingSold = await fetchSoldViaTrading(userToken, appId, devId, certId);
-    const sold = [];
-    for (const item of tradingSold) {
-        sold.push(await enrichSoldItem(item, ebayHeaders, userToken, appId, devId, certId));
+    // Each sold item needs its own Browse/Trading round-trip for full details —
+    // doing these one at a time was the main reason the listing endpoint could
+    // take many seconds to respond. Fire them all at once instead.
+    return Promise.all(
+        tradingSold.map(item => enrichSoldItem(item, ebayHeaders, userToken, appId, devId, certId))
+    );
+}
+
+// Attaches the real eBay "Brand" specific to every active listing (sourced cheaply
+// from the bulk Trading API call we already make) and fills in any items missed by
+// the 3 Browse category searches. The per-item lookups for missing items run in
+// parallel rather than one at a time.
+async function enrichActiveListings(active, ebayHeaders, appId, devId, certId) {
+    const userToken = await getUserToken(appId, certId);
+    if (!userToken) return active;
+
+    const tradingActive = await fetchActiveViaTrading(userToken, appId, devId, certId);
+    const tradingByLegacy = new Map();
+    for (const t of tradingActive) if (t.itemId) tradingByLegacy.set(String(t.itemId), t);
+
+    const browseIds = new Set();
+    for (const item of active) {
+        browseIds.add(item.itemId);
+        const legacy = legacyIdFromBrowseId(item.itemId);
+        if (legacy) browseIds.add(legacy);
+        const match = tradingByLegacy.get(String(legacy)) || tradingByLegacy.get(String(item.itemId));
+        if (match && match.brand) item.brand = match.brand;
     }
-    return sold;
+
+    const missing = tradingActive.filter(t => {
+        const legacy = legacyIdFromBrowseId(t.itemId);
+        return !browseIds.has(t.itemId) && !browseIds.has(legacy);
+    });
+    const supplemented = await Promise.all(missing.map(async tradingItem => {
+        const browseItem = await fetchBrowseItem(ebayHeaders, tradingItem.itemId);
+        const enriched = browseItem ? normalizeBrowseItem(browseItem, false) : tradingItem;
+        if (!enriched.brand) enriched.brand = tradingItem.brand || '';
+        return enriched;
+    }));
+
+    return [...active, ...supplemented];
 }
 
 function isActiveDuplicate(soldItem, activeIds) {
@@ -378,40 +414,16 @@ module.exports = async (req, res) => {
 
         const active = Array.from(unique.values());
 
-        // Supplement Browse API results with Trading API active list to catch any
-        // items in categories not covered by the 3 Browse searches, and — since
-        // Trading API already returns each item's ItemSpecifics in the same bulk
-        // call — use it to attach the seller's actual "Brand" specific to every
-        // active item instead of guessing the brand from the title.
-        const userToken = await getUserToken(APP_ID, CERT_ID);
-        if (userToken) {
-            const tradingActive = await fetchActiveViaTrading(userToken, APP_ID, DEV_ID, CERT_ID);
-            const tradingByLegacy = new Map();
-            for (const t of tradingActive) if (t.itemId) tradingByLegacy.set(String(t.itemId), t);
-
-            const browseIds = new Set();
-            for (const item of active) {
-                browseIds.add(item.itemId);
-                const legacy = legacyIdFromBrowseId(item.itemId);
-                if (legacy) browseIds.add(legacy);
-                const match = tradingByLegacy.get(String(legacy)) || tradingByLegacy.get(String(item.itemId));
-                if (match && match.brand) item.brand = match.brand;
-            }
-            for (const tradingItem of tradingActive) {
-                const legacy = legacyIdFromBrowseId(tradingItem.itemId);
-                if (!browseIds.has(tradingItem.itemId) && !browseIds.has(legacy)) {
-                    const browseItem = await fetchBrowseItem(ebayHeaders, tradingItem.itemId);
-                    const enriched = browseItem ? normalizeBrowseItem(browseItem, false) : tradingItem;
-                    if (!enriched.brand) enriched.brand = tradingItem.brand || '';
-                    active.push(enriched);
-                }
-            }
-        }
-
-        const sold = await fetchSoldItems(APP_ID, DEV_ID, CERT_ID, ebayHeaders);
+        // These two are independent of each other — run them concurrently instead
+        // of waiting for active-listing enrichment to finish before even starting
+        // the sold-items lookup.
+        const [enrichedActive, sold] = await Promise.all([
+            enrichActiveListings(active, ebayHeaders, APP_ID, DEV_ID, CERT_ID),
+            fetchSoldItems(APP_ID, DEV_ID, CERT_ID, ebayHeaders)
+        ]);
 
         const activeIds = new Set();
-        for (const item of active) {
+        for (const item of enrichedActive) {
             activeIds.add(item.itemId);
             const legacy = legacyIdFromBrowseId(item.itemId);
             if (legacy) activeIds.add(legacy);
@@ -419,7 +431,7 @@ module.exports = async (req, res) => {
 
         const soldOnly = sold.filter(i => !isActiveDuplicate(i, activeIds));
 
-        send(200, LIST_CACHE, [...active, ...soldOnly]);
+        send(200, LIST_CACHE, [...enrichedActive, ...soldOnly]);
 
     } catch (err) {
         send(500, 'no-store', { error: err.message });
