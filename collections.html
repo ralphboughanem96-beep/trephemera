@@ -540,13 +540,21 @@ const BRANDS = [
     { key:'christophe-claret', label:'Christophe Claret', terms:['christophe claret','christophe'] },
     { key:'de-bethune', label:'De Bethune', terms:['de bethune'] },
     { key:'greubel-forsey', label:'Greubel Forsey', terms:['greubel forsey','greubel'] },
-    { key:'tag-heuer', label:'Tag Heuer', terms:['tag heuer','tag-heuer'] }
+    { key:'tag-heuer', label:'Tag Heuer', terms:['tag heuer','tag-heuer'] },
+    { key:'universal-geneve', label:'Universal Genève', terms:['universal genève','universal geneve'] },
+    { key:'van-cleef-arpels', label:'Van Cleef & Arpels', terms:['van cleef & arpels','van cleef and arpels','van cleef'] },
+    { key:'girard-perregaux', label:'Girard-Perregaux', terms:['girard-perregaux','girard perregaux'] },
+    { key:'ulysse-nardin', label:'Ulysse Nardin', terms:['ulysse nardin'] }
 ];
 const BRAND_ALIASES = {
     'christophe': { key:'christophe-claret', label:'Christophe Claret' },
     'de':         { key:'de-bethune',        label:'De Bethune' },
     'greubel':    { key:'greubel-forsey',    label:'Greubel Forsey' },
-    'tag':        { key:'tag-heuer',         label:'Tag Heuer' }
+    'tag':        { key:'tag-heuer',         label:'Tag Heuer' },
+    'universal':  { key:'universal-geneve',  label:'Universal Genève' },
+    'van':        { key:'van-cleef-arpels',  label:'Van Cleef & Arpels' },
+    'girard':     { key:'girard-perregaux',  label:'Girard-Perregaux' },
+    'ulysse':     { key:'ulysse-nardin',     label:'Ulysse Nardin' }
 };
 const STOPWORDS = new Set(['the','a','an','rare','vintage','original','genuine','authentic','official','new','old','antique','set','lot','watch','watches']);
 function slugify(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'other'; }
@@ -564,9 +572,24 @@ function detectBrand(title) {
     const label = first.charAt(0).toUpperCase() + first.slice(1);
     return { key: slugify(label), label };
 }
+// Brand came straight from eBay (item specific / aspect) — trust it over the title.
+// Still run it through BRANDS so casing/grouping stays consistent with everything
+// else (e.g. if eBay returns "ROLEX" it still lands on the same "Rolex" bucket).
+function matchKnownBrand(apiBrand) {
+    const t = apiBrand.toLowerCase().trim();
+    for (const b of BRANDS) {
+        if (t === b.label.toLowerCase() || b.terms.some(s => t.includes(s))) return { key:b.key, label:b.label };
+    }
+    return { key: slugify(apiBrand), label: apiBrand };
+}
 function stripBrandFromTitle(title, brandLabel) {
     if (!title || !brandLabel) return title;
-    const regex = new RegExp('^' + brandLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'i');
+    const pattern = brandLabel
+        .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        .replace(/[éè]/gi, '[eéè]')
+        .replace(/-/g, '[ -]?')
+        .replace(/&/g, '(?:&|and)');
+    const regex = new RegExp('^' + pattern + '\\s*', 'i');
     return title.replace(regex, '');
 }
 
@@ -614,7 +637,8 @@ function stripHtml(html) {
 }
 
 function mapItem(item) {
-    const brand = detectBrand(item.title);
+    const apiBrand = (item.brand || '').trim();
+    const brand = apiBrand ? matchKnownBrand(apiBrand) : detectBrand(item.title);
     return {
         bk:     brand.key,
         bl:     brand.label,
