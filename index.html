@@ -3,9 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trephemera - Horology &amp; Stories</title>
-    <meta name="description" content="The essential stop for watch collectors. Rare vintage brochures, instruction manuals, catalogues and collector ephemera.">
+    <title>Trephemera | Rare Vintage Watch Brochures, Manuals &amp; Catalogues</title>
+    <meta name="description" content="Curated vintage watch brochures, instruction manuals, catalogues and collector ephemera for Rolex, Patek Philippe, Audemars Piguet and more. Based in Brussels, shipping worldwide.">
+    <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://trephemera.com">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://trephemera.com">
+    <meta property="og:site_name" content="Trephemera">
+    <meta property="og:title" content="Trephemera | Rare Vintage Watch Brochures, Manuals &amp; Catalogues">
+    <meta property="og:description" content="Curated vintage watch brochures, instruction manuals, catalogues and collector ephemera for Rolex, Patek Philippe, Audemars Piguet and more.">
+    <meta property="og:image" content="https://trephemera.com/og-image.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Trephemera | Rare Vintage Watch Brochures, Manuals &amp; Catalogues">
+    <meta name="twitter:description" content="Curated vintage watch brochures, instruction manuals, catalogues and collector ephemera for Rolex, Patek Philippe, Audemars Piguet and more.">
+    <meta name="twitter:image" content="https://trephemera.com/og-image.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://i.ebayimg.com" crossorigin>
@@ -142,6 +153,18 @@
         .listing-price { font-size:1.2rem; font-weight:600; color:var(--navy-light); }
         .listing-meta { font-size:0.95rem; letter-spacing:1px; text-transform:uppercase; color:#666; }
 
+        /* ── Skeleton loading state ──────────────────────────── */
+        @keyframes shimmer { 0% { background-position:-400px 0; } 100% { background-position:400px 0; } }
+        .skeleton-card { background:#fff; border:1px solid rgba(0,0,0,0.05); overflow:hidden; display:flex; flex-direction:column; }
+        .skeleton-shine { background:linear-gradient(90deg,#ececec 25%,#f6f6f6 37%,#ececec 63%); background-size:400px 100%; animation:shimmer 1.4s ease infinite; }
+        .skeleton-img { aspect-ratio:1; }
+        .skeleton-body { padding:20px; display:flex; flex-direction:column; gap:10px; }
+        .skeleton-line { height:14px; border-radius:3px; }
+        .skeleton-line.w-40 { width:40%; }
+        .skeleton-line.w-90 { width:90%; }
+        .skeleton-line.w-70 { width:70%; }
+        .skeleton-line.w-30 { width:30%; margin-top:auto; }
+
         .view-all-wrap { text-align:center; margin-top:60px; }
         .view-all-btn { display:inline-block; font-size:1rem; font-weight:600; letter-spacing:4px; text-transform:uppercase; color:var(--navy); text-decoration:none; border:1px solid var(--navy); padding:14px 42px; transition:background 0.3s,color 0.3s,letter-spacing 0.3s; }
         .view-all-btn:hover { background:var(--navy); color:var(--cream); letter-spacing:5px; }
@@ -188,6 +211,31 @@
         }
         @media (max-width:600px) { .hero-ornament { width:260px; height:260px; } }
     </style>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Trephemera",
+      "url": "https://trephemera.com",
+      "description": "Curated vintage watch brochures, instruction manuals, catalogues and collector ephemera.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Brussels",
+        "addressCountry": "BE"
+      },
+      "sameAs": [
+        "https://www.ebay.com/usr/trephemera"
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Trephemera",
+      "url": "https://trephemera.com"
+    }
+    </script>
 </head>
 <body>
 
@@ -336,6 +384,67 @@ function watchSVG() {
     return `<svg class="watch-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="40" cy="40" r="24" stroke="#c49a6c" stroke-width="1"/><circle cx="40" cy="40" r="20" stroke="#c49a6c" stroke-width=".5"/><line x1="40" y1="20" x2="40" y2="25" stroke="#c49a6c" stroke-width="1.5"/><line x1="40" y1="55" x2="40" y2="60" stroke="#c49a6c" stroke-width="1.5"/><line x1="20" y1="40" x2="25" y2="40" stroke="#c49a6c" stroke-width="1.5"/><line x1="55" y1="40" x2="60" y2="40" stroke="#c49a6c" stroke-width="1.5"/><line x1="40" y1="40" x2="40" y2="27" stroke="#c49a6c" stroke-width="1.5" stroke-linecap="round"/><line x1="40" y1="40" x2="49" y2="45" stroke="#c49a6c" stroke-width="1" stroke-linecap="round"/><circle cx="40" cy="40" r="2" fill="#c49a6c"/><rect x="28" y="13" width="24" height="6" rx="1" stroke="#c49a6c" stroke-width=".5"/><rect x="28" y="61" width="24" height="6" rx="1" stroke="#c49a6c" stroke-width=".5"/></svg>`;
 }
 
+/* ── Brand detection — kept in sync with collections.html ───── */
+const BRANDS = [
+    { key:'rolex', label:'Rolex', terms:['rolex'] },
+    { key:'patek-philippe', label:'Patek Philippe', terms:['patek philippe','patek'] },
+    { key:'audemars-piguet', label:'Audemars Piguet', terms:['audemars piguet','audemars',' ap '] },
+    { key:'vacheron-constantin', label:'Vacheron Constantin', terms:['vacheron constantin','vacheron'] },
+    { key:'richard-mille', label:'Richard Mille', terms:['richard mille'] },
+    { key:'a-lange', label:'A. Lange & Söhne', terms:['lange & söhne','lange & sohne','a. lange','a lange'] },
+    { key:'iwc', label:'IWC Schaffhausen', terms:['iwc schaffhausen','iwc'] },
+    { key:'jaeger-lecoultre', label:'Jaeger-LeCoultre', terms:['jaeger-lecoultre','jaeger lecoultre','jaeger'] },
+    { key:'breguet', label:'Breguet', terms:['breguet'] },
+    { key:'omega', label:'Omega', terms:['omega'] },
+    { key:'cartier', label:'Cartier', terms:['cartier'] },
+    { key:'christophe-claret', label:'Christophe Claret', terms:['christophe claret','christophe'] },
+    { key:'de-bethune', label:'De Bethune', terms:['de bethune'] },
+    { key:'greubel-forsey', label:'Greubel Forsey', terms:['greubel forsey','greubel'] },
+    { key:'tag-heuer', label:'Tag Heuer', terms:['tag heuer','tag-heuer'] },
+    { key:'universal-geneve', label:'Universal Genève', terms:['universal genève','universal geneve'] },
+    { key:'van-cleef-arpels', label:'Van Cleef & Arpels', terms:['van cleef & arpels','van cleef and arpels','van cleef'] },
+    { key:'girard-perregaux', label:'Girard-Perregaux', terms:['girard-perregaux','girard perregaux'] },
+    { key:'ulysse-nardin', label:'Ulysse Nardin', terms:['ulysse nardin'] }
+];
+const BRAND_ALIASES = {
+    'christophe': { key:'christophe-claret', label:'Christophe Claret' },
+    'de':         { key:'de-bethune',        label:'De Bethune' },
+    'greubel':    { key:'greubel-forsey',    label:'Greubel Forsey' },
+    'tag':        { key:'tag-heuer',         label:'Tag Heuer' },
+    'universal':  { key:'universal-geneve',  label:'Universal Genève' },
+    'van':        { key:'van-cleef-arpels',  label:'Van Cleef & Arpels' },
+    'girard':     { key:'girard-perregaux',  label:'Girard-Perregaux' },
+    'ulysse':     { key:'ulysse-nardin',     label:'Ulysse Nardin' }
+};
+const STOPWORDS = new Set(['the','a','an','rare','vintage','original','genuine','authentic','official','new','old','antique','set','lot','watch','watches']);
+function slugify(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'other'; }
+function toTitleCase(s) {
+    return (s || '').toLowerCase().replace(/\b([a-zà-ÿ])/gi, c => c.toUpperCase());
+}
+function detectBrand(title) {
+    const t = (title || '').toLowerCase();
+    for (const b of BRANDS) if (b.terms.some(s => t.includes(s))) return { key:b.key, label:b.label };
+    const words = (title || '').replace(/[^A-Za-z0-9&.\- ]/g,' ').split(/\s+/).filter(Boolean);
+    for (let i = 0; i < words.length - 1; i++) {
+        const pair = (words[i] + ' ' + words[i + 1]).toLowerCase();
+        for (const b of BRANDS) if (b.terms.some(s => pair.includes(s) || s.includes(pair))) return { key:b.key, label:b.label };
+    }
+    const first = words.find(w => !STOPWORDS.has(w.toLowerCase())) || words[0] || 'Other';
+    const alias = BRAND_ALIASES[first.toLowerCase()];
+    if (alias) return alias;
+    const label = toTitleCase(first);
+    return { key: slugify(label), label };
+}
+// Brand came straight from eBay (item specific / aspect) — trust it over the title.
+function matchKnownBrand(apiBrand) {
+    const t = apiBrand.toLowerCase().trim();
+    for (const b of BRANDS) {
+        if (t === b.label.toLowerCase() || b.terms.some(s => t.includes(s))) return { key:b.key, label:b.label };
+    }
+    const label = toTitleCase(apiBrand.trim());
+    return { key: slugify(label), label };
+}
+
 const CONDITION_EN = {
     'neuf':'New','neuf avec étiquettes':'New with tags','neuf sans étiquette':'New without tags',
     'neuf sans étiquettes':'New without tags','neuf sans emballage':'New without box','comme neuf':'Like New',
@@ -364,8 +473,28 @@ function translateCondition(c) {
 
 function stripBrandFromTitle(title, brandLabel) {
     if (!title || !brandLabel) return title;
-    const regex = new RegExp('^' + brandLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'i');
+    const pattern = brandLabel
+        .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        .replace(/[éè]/gi, '[eéè]')
+        .replace(/-/g, '[ -]?')
+        .replace(/&/g, '(?:&|and)');
+    const regex = new RegExp('^' + pattern + '\\s*', 'i');
     return title.replace(regex, '');
+}
+
+/* ── Skeleton loading state ───────────────────────────────────── */
+function renderSkeleton(count = 6) {
+    document.getElementById('listings-container').innerHTML = Array.from({ length: count }).map(() => `
+        <div class="skeleton-card" aria-hidden="true">
+            <div class="skeleton-img skeleton-shine"></div>
+            <div class="skeleton-body">
+                <div class="skeleton-line skeleton-shine w-40"></div>
+                <div class="skeleton-line skeleton-shine w-90"></div>
+                <div class="skeleton-line skeleton-shine w-70"></div>
+                <div class="skeleton-line skeleton-shine w-30"></div>
+            </div>
+        </div>
+    `).join('');
 }
 
 function renderFeatured(items) {
@@ -397,6 +526,7 @@ function renderFeatured(items) {
 }
 
 function loadFeatured() {
+    renderSkeleton();
     fetch('/api/ebay-listings')
         .then(r => r.json())
         .then(items => {
@@ -406,10 +536,11 @@ function loadFeatured() {
             const sold = items.filter(i => i.sold || i.sellingState === 'ENDED');
             const combined = [...available, ...sold].slice(0, 6);
             renderFeatured(combined.map(item => {
-                const brand = item.title.split(' ')[0];
+                const apiBrand = (item.brand || '').trim();
+                const brand = apiBrand ? matchKnownBrand(apiBrand) : detectBrand(item.title);
                 return {
-                    brand: brand,
-                    title: stripBrandFromTitle(item.title, brand),
+                    brand: brand.label,
+                    title: stripBrandFromTitle(item.title, brand.label),
                     price: `${item.price?.currency||'€'} ${parseFloat(item.price?.value||0).toFixed(2)}`,
                     meta: translateCondition(item.condition),
                     image: item.image?.imageUrl || null,
