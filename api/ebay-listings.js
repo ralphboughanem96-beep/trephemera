@@ -4,7 +4,7 @@
 //   — provisioned via Vercel Dashboard → Storage → Marketplace → Upstash for Redis.
 //   Vercel KV is deprecated; Upstash is its direct successor and uses the same
 //   REST-token model, so no other code here needs to change if you migrate later.
-// Env (permanent image copies): BLOB_READ_WRITE_TOKEN
+// Env (permanent image copies): BLOB_STORE_ID (+ auto-rotated VERCEL_OIDC_TOKEN)
 //   — provisioned via Vercel Dashboard → Storage → Blob. The first time a sold
 //   item is seen, its images are downloaded from eBay's CDN and re-uploaded here,
 //   so the site no longer depends on eBay continuing to host those files.
@@ -63,31 +63,17 @@ async function loadCachedSoldItems() {
 
 async function persistSoldItems(items) {
     const client = getRedis();
-    if (!items.length) return items;
-    if (!client) return items; // no Redis configured — nothing to persist, use items as-is
-
+    if (!client || !items.length) return;
     try {
-        const migrated = await Promise.all(items.map(async (item) => {
-            if (!item.itemId) return item;
-            let existing = null;
-            try {
-                existing = await client.get(soldItemKey(item.itemId));
-            } catch (err) {
-                console.error('Redis read (pre-migration) failed:', err.message);
-            }
-            const withImages = await ensureImagesInBlob(item, existing);
-            try {
-                await client.set(soldItemKey(item.itemId), withImages);
-                await client.sadd(SOLD_INDEX_KEY, item.itemId);
-            } catch (err) {
-                console.error('Redis write failed:', err.message);
-            }
-            return withImages;
-        }));
-        return migrated;
+        const pipeline = client.pipeline();
+        for (const item of items) {
+            if (!item.itemId) continue;
+            pipeline.set(soldItemKey(item.itemId), item);
+            pipeline.sadd(SOLD_INDEX_KEY, item.itemId);
+        }
+        await pipeline.exec();
     } catch (err) {
-        console.error('Sold item persistence failed:', err.message);
-        return items;
+        console.error('Redis write failed:', err.message);
     }
 }
 
@@ -125,11 +111,20 @@ async function uploadImageToBlob(sourceUrl, itemId, index) {
     }
 }
 
+// Vercel Blob can be authenticated two ways: the older static BLOB_READ_WRITE_TOKEN,
+// or the newer OIDC-based setup (BLOB_STORE_ID + an auto-rotated VERCEL_OIDC_TOKEN
+// that Vercel injects and refreshes on every deployment). The @vercel/blob SDK
+// picks whichever is present automatically — we just need to know if *either*
+// is configured before attempting an upload.
+function blobConfigured() {
+    return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
+}
+
 // If this item's images were already migrated to Blob on a previous request,
 // reuse those URLs (no re-download). Otherwise, migrate them now — this only
 // costs bandwidth/storage once per item, ever, not on every visit.
 async function ensureImagesInBlob(item, existingCached) {
-    if (!process.env.BLOB_READ_WRITE_TOKEN) return item; // Blob not configured yet — leave eBay URLs as-is
+    if (!blobConfigured()) return item; // Blob not configured yet — leave eBay URLs as-is
 
     if (existingCached && isBlobUrl(existingCached.image?.imageUrl)) {
         return { ...item, image: existingCached.image, additionalImages: existingCached.additionalImages };
@@ -148,6 +143,33 @@ async function ensureImagesInBlob(item, existingCached) {
     }));
 
     return { ...item, image: newImage, additionalImages: newAdditional };
+}
+
+// Runs across every sold item we're about to send back — whether it came from
+// the live eBay call or purely from our own cache — and migrates any that
+// aren't on Blob yet. Already-migrated items are skipped immediately (cheap
+// check), so this stays fast after the first pass, but nothing is permanently
+// missed just because eBay stopped returning it as "sold" before it got migrated.
+async function backfillImageMigration(items) {
+    if (!blobConfigured() || !items.length) return items;
+    const client = getRedis();
+
+    return Promise.all(items.map(async (item) => {
+        if (isBlobUrl(item.image?.imageUrl)) return item; // already migrated, nothing to do
+
+        const migrated = await ensureImagesInBlob(item, null);
+
+        if (client && item.itemId) {
+            try {
+                await client.set(soldItemKey(item.itemId), migrated);
+                await client.sadd(SOLD_INDEX_KEY, item.itemId);
+            } catch (err) {
+                console.error('Redis write (image backfill) failed:', err.message);
+            }
+        }
+
+        return migrated;
+    }));
 }
 
 // Live sold items win over cached copies of the same item (fresher price/desc/etc.);
@@ -615,16 +637,20 @@ module.exports = async (req, res) => {
         }
 
         // Persist the freshly-fetched sold items before responding, so they survive
-        // once eBay's 60-day SoldList window passes them by — and so their images
-        // get copied into our own Blob storage the first time we see them. Awaited
-        // (not fire-and-forget) because some serverless runtimes can suspend the
+        // once eBay's 60-day SoldList window passes them by. Awaited (not
+        // fire-and-forget) because some serverless runtimes can suspend the
         // function as soon as the response is sent.
-        const migratedLiveSold = await persistSoldItems(liveSold);
+        await persistSoldItems(liveSold);
 
-        const mergedSold = dedupeSoldById(cachedSold, migratedLiveSold)
+        const mergedSold = dedupeSoldById(cachedSold, liveSold)
             .filter(i => !isActiveDuplicate(i, activeIds));
 
-        send(200, LIST_CACHE, [...enrichedActive, ...mergedSold]);
+        // Migrate any sold item (live or cache-only) that isn't on Blob storage
+        // yet. Cheap no-op for anything already migrated, so this scales fine
+        // even though it runs on every request.
+        const finalSold = await backfillImageMigration(mergedSold);
+
+        send(200, LIST_CACHE, [...enrichedActive, ...finalSold]);
 
     } catch (err) {
         send(500, 'no-store', { error: err.message });
