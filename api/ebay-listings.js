@@ -4,8 +4,13 @@
 //   — provisioned via Vercel Dashboard → Storage → Marketplace → Upstash for Redis.
 //   Vercel KV is deprecated; Upstash is its direct successor and uses the same
 //   REST-token model, so no other code here needs to change if you migrate later.
+// Env (permanent image copies): BLOB_READ_WRITE_TOKEN
+//   — provisioned via Vercel Dashboard → Storage → Blob. The first time a sold
+//   item is seen, its images are downloaded from eBay's CDN and re-uploaded here,
+//   so the site no longer depends on eBay continuing to host those files.
 
 const { Redis } = require('@upstash/redis');
+const { put } = require('@vercel/blob');
 
 let cachedAppToken = null;
 let appTokenExpiry = 0;
@@ -58,18 +63,91 @@ async function loadCachedSoldItems() {
 
 async function persistSoldItems(items) {
     const client = getRedis();
-    if (!client || !items.length) return;
+    if (!items.length) return items;
+    if (!client) return items; // no Redis configured — nothing to persist, use items as-is
+
     try {
-        const pipeline = client.pipeline();
-        for (const item of items) {
-            if (!item.itemId) continue;
-            pipeline.set(soldItemKey(item.itemId), item);
-            pipeline.sadd(SOLD_INDEX_KEY, item.itemId);
-        }
-        await pipeline.exec();
+        const migrated = await Promise.all(items.map(async (item) => {
+            if (!item.itemId) return item;
+            let existing = null;
+            try {
+                existing = await client.get(soldItemKey(item.itemId));
+            } catch (err) {
+                console.error('Redis read (pre-migration) failed:', err.message);
+            }
+            const withImages = await ensureImagesInBlob(item, existing);
+            try {
+                await client.set(soldItemKey(item.itemId), withImages);
+                await client.sadd(SOLD_INDEX_KEY, item.itemId);
+            } catch (err) {
+                console.error('Redis write failed:', err.message);
+            }
+            return withImages;
+        }));
+        return migrated;
     } catch (err) {
-        console.error('Redis write failed:', err.message);
+        console.error('Sold item persistence failed:', err.message);
+        return items;
     }
+}
+
+// ── Permanent image copies (Vercel Blob) ────────────────────────────────
+// eBay's own image URLs (i.ebayimg.com/...) tend to stay up for a long time
+// after a listing ends, but that's not guaranteed — so once an item is sold,
+// we make our own permanent copy instead of depending on eBay to keep hosting it.
+function safeKey(id) {
+    return String(id).replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function isBlobUrl(url) {
+    return typeof url === 'string' && url.includes('.public.blob.vercel-storage.com');
+}
+
+async function uploadImageToBlob(sourceUrl, itemId, index) {
+    if (!sourceUrl) return null;
+    try {
+        const r = await fetch(sourceUrl);
+        if (!r.ok) return null;
+        const contentType = r.headers.get('content-type') || 'image/jpeg';
+        const ext = (contentType.split('/')[1] || 'jpg').split(';')[0];
+        const buffer = Buffer.from(await r.arrayBuffer());
+        const pathname = `sold-images/${safeKey(itemId)}/${index}.${ext}`;
+        const blob = await put(pathname, buffer, {
+            access: 'public',
+            contentType,
+            addRandomSuffix: false,
+            allowOverwrite: true
+        });
+        return blob.url;
+    } catch (err) {
+        console.error('Blob upload failed:', err.message);
+        return null;
+    }
+}
+
+// If this item's images were already migrated to Blob on a previous request,
+// reuse those URLs (no re-download). Otherwise, migrate them now — this only
+// costs bandwidth/storage once per item, ever, not on every visit.
+async function ensureImagesInBlob(item, existingCached) {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) return item; // Blob not configured yet — leave eBay URLs as-is
+
+    if (existingCached && isBlobUrl(existingCached.image?.imageUrl)) {
+        return { ...item, image: existingCached.image, additionalImages: existingCached.additionalImages };
+    }
+
+    let newImage = item.image;
+    if (item.image?.imageUrl) {
+        const uploaded = await uploadImageToBlob(item.image.imageUrl, item.itemId, 0);
+        if (uploaded) newImage = { ...item.image, imageUrl: uploaded };
+    }
+
+    const sourceAdditional = item.additionalImages || [];
+    const newAdditional = await Promise.all(sourceAdditional.map(async (img, i) => {
+        const uploaded = await uploadImageToBlob(img.imageUrl, item.itemId, i + 1);
+        return uploaded ? { ...img, imageUrl: uploaded } : img;
+    }));
+
+    return { ...item, image: newImage, additionalImages: newAdditional };
 }
 
 // Live sold items win over cached copies of the same item (fresher price/desc/etc.);
@@ -537,12 +615,13 @@ module.exports = async (req, res) => {
         }
 
         // Persist the freshly-fetched sold items before responding, so they survive
-        // once eBay's 60-day SoldList window passes them by. Awaited (not
-        // fire-and-forget) because some serverless runtimes can suspend the
+        // once eBay's 60-day SoldList window passes them by — and so their images
+        // get copied into our own Blob storage the first time we see them. Awaited
+        // (not fire-and-forget) because some serverless runtimes can suspend the
         // function as soon as the response is sent.
-        await persistSoldItems(liveSold);
+        const migratedLiveSold = await persistSoldItems(liveSold);
 
-        const mergedSold = dedupeSoldById(cachedSold, liveSold)
+        const mergedSold = dedupeSoldById(cachedSold, migratedLiveSold)
             .filter(i => !isActiveDuplicate(i, activeIds));
 
         send(200, LIST_CACHE, [...enrichedActive, ...mergedSold]);
