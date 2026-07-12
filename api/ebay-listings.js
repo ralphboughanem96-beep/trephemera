@@ -1,5 +1,11 @@
 // Trephemera — eBay API Proxy
 // Env: EBAY_APP_ID, EBAY_CERT_ID, EBAY_SELLER, EBAY_DEV_ID (optional), EBAY_USER_REFRESH_TOKEN
+// Env (persistent sold-item store): UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
+//   — provisioned via Vercel Dashboard → Storage → Marketplace → Upstash for Redis.
+//   Vercel KV is deprecated; Upstash is its direct successor and uses the same
+//   REST-token model, so no other code here needs to change if you migrate later.
+
+const { Redis } = require('@upstash/redis');
 
 let cachedAppToken = null;
 let appTokenExpiry = 0;
@@ -9,6 +15,71 @@ let userTokenExpiry = 0;
 const TRADING_URL = 'https://api.ebay.com/ws/api.dll';
 const SITE_ID = '23'; // eBay Belgium
 const OAUTH_SCOPE = process.env.EBAY_OAUTH_SCOPES || 'https://api.ebay.com/oauth/api_scope';
+
+// ── Persistent sold-item store ──────────────────────────────────────────
+// Redis holds every sold item we've ever seen, keyed by itemId, plus a set
+// ("sold:index") listing every itemId we've stored so we can enumerate them.
+// This is what lets sold items keep showing on the site after eBay's
+// GetMyeBaySelling SoldList window (60 days) rolls past them.
+const SOLD_INDEX_KEY = 'sold:index';
+const soldItemKey = (id) => `sold:item:${id}`;
+
+let redis = null;
+function getRedis() {
+    if (redis) return redis;
+    // Vercel's Upstash-for-Redis integration injects KV_REST_API_URL / KV_REST_API_TOKEN
+    // (legacy naming kept for backward compatibility with the old Vercel KV product),
+    // not the UPSTASH_REDIS_REST_* names Redis.fromEnv() looks for by default — so we
+    // point the client at them explicitly. Falls back to the Upstash-native names too,
+    // in case the store was provisioned directly through Upstash instead of the
+    // Vercel Marketplace.
+    const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (!url || !token) {
+        return null; // not configured — caching is skipped, everything still works live-only
+    }
+    redis = new Redis({ url, token });
+    return redis;
+}
+
+async function loadCachedSoldItems() {
+    const client = getRedis();
+    if (!client) return [];
+    try {
+        const ids = await client.smembers(SOLD_INDEX_KEY);
+        if (!ids || !ids.length) return [];
+        const items = await Promise.all(ids.map((id) => client.get(soldItemKey(id))));
+        return items.filter(Boolean);
+    } catch (err) {
+        console.error('Redis read failed:', err.message);
+        return [];
+    }
+}
+
+async function persistSoldItems(items) {
+    const client = getRedis();
+    if (!client || !items.length) return;
+    try {
+        const pipeline = client.pipeline();
+        for (const item of items) {
+            if (!item.itemId) continue;
+            pipeline.set(soldItemKey(item.itemId), item);
+            pipeline.sadd(SOLD_INDEX_KEY, item.itemId);
+        }
+        await pipeline.exec();
+    } catch (err) {
+        console.error('Redis write failed:', err.message);
+    }
+}
+
+// Live sold items win over cached copies of the same item (fresher price/desc/etc.);
+// anything only present in the cache (because eBay stopped returning it) is kept as-is.
+function dedupeSoldById(cached, live) {
+    const map = new Map();
+    for (const it of cached) if (it.itemId) map.set(String(it.itemId), it);
+    for (const it of live) if (it.itemId) map.set(String(it.itemId), it);
+    return [...map.values()];
+}
 
 function stripHtml(html) {
     return (html || '')
@@ -407,6 +478,26 @@ module.exports = async (req, res) => {
                 }
             }
 
+            // Not on eBay anymore (item too old / removed) — fall back to our own
+            // permanent record for this item, if we stored it while it was sold.
+            const client = getRedis();
+            if (client) {
+                try {
+                    const cached = await client.get(soldItemKey(legacyIdFromBrowseId(itemId)))
+                        || await client.get(soldItemKey(itemId));
+                    if (cached) {
+                        const images = [
+                            cached.image?.imageUrl,
+                            ...(cached.additionalImages || []).map(x => x.imageUrl)
+                        ].filter(Boolean);
+                        send(200, LIST_CACHE, { desc: cached.shortDescription, images });
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Redis fallback read failed:', err.message);
+                }
+            }
+
             throw new Error('Item not found');
         }
 
@@ -430,10 +521,12 @@ module.exports = async (req, res) => {
 
         // These two are independent of each other — run them concurrently instead
         // of waiting for active-listing enrichment to finish before even starting
-        // the sold-items lookup.
-        const [enrichedActive, sold] = await Promise.all([
+        // the sold-items lookup. Cached (permanently stored) sold items are loaded
+        // in parallel too, since they don't depend on either eBay call.
+        const [enrichedActive, liveSold, cachedSold] = await Promise.all([
             enrichActiveListings(active, ebayHeaders, APP_ID, DEV_ID, CERT_ID),
-            fetchSoldItems(APP_ID, DEV_ID, CERT_ID, ebayHeaders)
+            fetchSoldItems(APP_ID, DEV_ID, CERT_ID, ebayHeaders),
+            loadCachedSoldItems()
         ]);
 
         const activeIds = new Set();
@@ -443,9 +536,16 @@ module.exports = async (req, res) => {
             if (legacy) activeIds.add(legacy);
         }
 
-        const soldOnly = sold.filter(i => !isActiveDuplicate(i, activeIds));
+        // Persist the freshly-fetched sold items before responding, so they survive
+        // once eBay's 60-day SoldList window passes them by. Awaited (not
+        // fire-and-forget) because some serverless runtimes can suspend the
+        // function as soon as the response is sent.
+        await persistSoldItems(liveSold);
 
-        send(200, LIST_CACHE, [...enrichedActive, ...soldOnly]);
+        const mergedSold = dedupeSoldById(cachedSold, liveSold)
+            .filter(i => !isActiveDuplicate(i, activeIds));
+
+        send(200, LIST_CACHE, [...enrichedActive, ...mergedSold]);
 
     } catch (err) {
         send(500, 'no-store', { error: err.message });
